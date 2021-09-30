@@ -1,0 +1,73 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: time, datatype: string, description: Start time of observation}
+# - {name: exptime, unit: min, datatype: float64, description: Exposure time}
+# - {name: location.x, unit: km, datatype: float64, description: Location of the spacecraft}
+# - {name: location.y, unit: km, datatype: float64, description: Location of the spacecraft}
+# - {name: location.z, unit: km, datatype: float64, description: Location of the spacecraft}
+# - {name: center.ra, unit: deg, datatype: float64}
+# - {name: center.dec, unit: deg, datatype: float64}
+# - {name: roll, unit: deg, datatype: float64, description: 'Roll angle of spacecraft, position angle of FOV'}
+# meta:
+#   __serialized_columns__:
+#     center:
+#       __class__: astropy.coordinates.sky_coordinate.SkyCoord
+#       __info__: {description: Pointing of the center of the spacecraft's FOV}
+#       dec: !astropy.table.SerializedColumn
+#         __class__: astropy.coordinates.angles.Latitude
+#         unit: &id001 !astropy.units.Unit {unit: deg}
+#         value: !astropy.table.SerializedColumn {name: center.dec}
+#       frame: icrs
+#       ra: !astropy.table.SerializedColumn
+#         __class__: astropy.coordinates.angles.Longitude
+#         unit: *id001
+#         value: !astropy.table.SerializedColumn {name: center.ra}
+#         wrap_angle: !astropy.coordinates.Angle
+#           unit: *id001
+#           value: 360.0
+#       representation_type: spherical
+#     location:
+#       __class__: astropy.coordinates.earth.EarthLocation
+#       __info__: {description: Location of the spacecraft}
+#       ellipsoid: WGS84
+#       x: !astropy.table.SerializedColumn
+#         __class__: astropy.units.quantity.Quantity
+#         __info__: {description: Location of the spacecraft}
+#         unit: &id002 !astropy.units.Unit {unit: km}
+#         value: !astropy.table.SerializedColumn {name: location.x}
+#       y: !astropy.table.SerializedColumn
+#         __class__: astropy.units.quantity.Quantity
+#         __info__: {description: Location of the spacecraft}
+#         unit: *id002
+#         value: !astropy.table.SerializedColumn {name: location.y}
+#       z: !astropy.table.SerializedColumn
+#         __class__: astropy.units.quantity.Quantity
+#         __info__: {description: Location of the spacecraft}
+#         unit: *id002
+#         value: !astropy.table.SerializedColumn {name: location.z}
+#     time:
+#       __class__: astropy.time.core.Time
+#       __info__: {description: Start time of observation}
+#       format: isot
+#       in_subfmt: '*'
+#       out_subfmt: '*'
+#       precision: 3
+#       scale: utc
+#       value: !astropy.table.SerializedColumn {name: time}
+#   cmdline: /home4/lpsinger/.cache/pypoetry/virtualenvs/dorado-scheduling-oi5bhjjD-py3.8/bin/dorado-scheduling ../observing-scenarios-simulations/runs/O5/bns_astro/allsky/10.fits
+#     -o O5/bns_astro/10.ecsv
+#   prob: 0.9468783879206031
+#   real: 60.65002912003547
+#   status: OPTIMAL_SOLUTION
+#   sys: 11.942843
+#   user: 48.651073999999994
+# schema: astropy-2.0
+time exptime location.x location.y location.z center.ra center.dec roll
+2012-02-28T17:47:38.566 10.0 -1212.917934423033 3498.3242376792437 -6047.967769593287 163.125 -28.630989836924346 70.0
+2012-02-28T18:22:38.566 10.0 2755.8274564227017 -6477.514094410436 811.6975857990348 315.0 70.90666664467564 60.0
+2012-02-28T18:32:38.566 10.0 1253.6187503881224 -5065.737951600146 4784.978174120955 305.5263157894737 61.94383702315671 50.0
+2012-02-28T18:44:38.566 10.0 -831.251847743271 -694.541614145795 6992.693217451079 298.125 54.34091230386123 40.0
+2012-02-28T18:54:38.566 10.0 -1882.1502831863113 3497.8414634800397 5858.674030707574 156.09375 -22.024312837042164 30.0
+2012-02-28T19:04:38.566 10.0 -1892.2507421002772 6377.594984015158 2434.299542252433 150.46875 -16.957763300004142 20.0
+2012-02-28T19:15:38.566 10.0 -909.4330968899066 6620.292507153017 -2366.5987405543133 144.84375 -9.594068226860461 20.0

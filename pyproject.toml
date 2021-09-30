@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "dorado-paramest"
+version = "0.1.0"
+description = ""
+authors = ["BasDorsman"]
+
+[tool.poetry.dependencies]
+python = ">=3.7.1,<3.9"
+dynesty = "^1.1"
+six = "^1.15.0"
+scipy = "^1.6.2"
+astropy = "^4.2.1"
+PyYAML = "^5.4.1"
+matplotlib = "^3.4.1"
+schwimmbad = "^0.3.2"
+kilonova-heating-rate = {git = "https://github.com/Basdorsman/kilonova-heating-rate.git", rev = "heating-beta-numba"}
+dorado-sensitivity = "^0.3.0"
+pandas = "^1.2.4"
+dorado-scheduling = {git = "https://github.com/nasa/dorado-scheduling.git", rev = "main"}
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
