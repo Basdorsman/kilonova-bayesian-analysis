@@ -21,12 +21,12 @@ import os
 
 ########### PARAMETERS, CHANGE HERE ##########
 model = 'shock' #shock, kilonova, kilonova_uvboost
-read_data = 'shock_optical' #kilonova_optical, kilonova_uvboost_optical, shock_optical
-dist = 160 #mpc
+read_data = 'shock' #kilonova, kilonova_uvboost, shock
+dist = 40 #mpc
 include_uv = 'uv' #uv, no_uv
 include_optical = 'r' # ['u', 'g','r', 'I', 'z'], False
 print_progress=True
-method = 'test' #test, timeout
+method = 'timeout' #test, timeout, pool
 max_time = 100*60*60 # seconds, parameter for 'timeout' method
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
@@ -175,15 +175,17 @@ if method == 'test':
 elif method == 'timeout' or method == 'pool':
     ########## NESTED SAMPLER #########
     start_time = time.time()
-    folderstring = f'output_files/{model}model_{read_data}data_{dist}Mpc_{bs_string}band_{include_uv}'
+    #folderstring = f'output_files/results/{model}model_{read_data}data_{dist}Mpc_{bs_string}band_{include_uv}'
+    folderstring = f'output_files/results/{model}model_{read_data}data'
     try:
         os.mkdir(folderstring)
         print(f'Created directory: {folderstring}')
     except:
         print(f'Directory already exists: {folderstring}')
 
-    daytimestring = datetime.datetime.now().strftime("%y-%m-%d %H%M")
-    with open(folderstring + f'/{daytimestring} priorlims','wb') as kilonova_limits :
+    #daytimestring = datetime.datetime.now().strftime("%y-%m-%d")
+    filestring = f'{dist}Mpc_{bs_string}band_{include_uv}'
+    with open(folderstring + f'/priorlims_{filestring}','wb') as kilonova_limits :
         pickle.dump(limits, kilonova_limits)
 
     if method == 'pool':
@@ -210,5 +212,5 @@ elif method == 'timeout' or method == 'pool':
         print('error in method')
 
     print("--- %s seconds ---" % (time.time() - start_time))
-    with open(folderstring + f'/{daytimestring} results', 'wb') as kilonova_results :
+    with open(folderstring + f'/results_{filestring}', 'wb') as kilonova_results :
         pickle.dump(sampler.results, kilonova_results)

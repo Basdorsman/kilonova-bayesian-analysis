@@ -20,25 +20,25 @@ import astropy.units as u
 
 
 dist = 40
-read_data = 'shock_optical'
+read_data = 'shock'
 
 #### parameters
 
-if read_data == 'kilonova_optical':
+if read_data == 'kilonova':
     mass = 0.05 * u.Msun
     velocities = np.asarray([0.1, 0.2, 0.4]) * c.c
     opacities = np.asarray([3.0, 0.5]) * u.cm**2 / u.g
     n = 4.5
     theta = np.array((mass, velocities, opacities, n),dtype=object)
     radiation = 'kilonova'
-elif read_data == 'kilonova_uvboost_optical':
+elif read_data == 'kilonova_uvboost':
     mass = 0.05 * u.Msun
     velocities = np.asarray([0.1, 0.2, 0.23]) * c.c
     opacities = np.asarray([3.0, 0.04]) * u.cm**2 / u.g
     n = 4.5
     theta = np.array((mass, velocities, opacities, n),dtype=object)
     radiation = 'kilonova'
-elif read_data == 'shock_optical':
+elif read_data == 'shock':
     # k in 0.1 cm^2/g, M in 0.01 solar masses, v in 0.1c, R_0 in 10^10 cm
     theta = [5, 1, 2, 5]
     radiation = 'shock'
