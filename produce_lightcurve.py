@@ -112,8 +112,8 @@ class Lightcurve():
             abmags[key] = get_abmag(T[flag], r[flag], self.distance, bandpasses_dict[key])
         return abmags
 
-    def calc_snrs_dorado(self,t_rel,theta,ts_time_object,coords, radiation = 'kilonova'): #dorado only
-        seds = self.get_sed(t_rel,theta,dorado.sensitivity.bandpasses.NUV_D,radiation = radiation)
+    def calc_snrs_dorado(self,t_rel,theta,ts_time_object,coords,bandpass=dorado.sensitivity.bandpasses.NUV_D,radiation = 'kilonova'): #dorado only
+        seds = self.get_sed(t_rel,theta,bandpass,radiation = radiation)
         SNRs=[dorado.sensitivity.get_snr(sed, exptime=10*u.min,
                                           coord=coord, night=True, time =
                                           t_time_object) for sed,

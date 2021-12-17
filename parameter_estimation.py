@@ -21,12 +21,12 @@ import os
 
 ########### PARAMETERS, CHANGE HERE ##########
 model = 'shock' #shock, kilonova, kilonova_uvboost
-read_data = 'shock_optical' #kilonova_optical, shock_optical
-dist = 40 #mpc
+read_data = 'shock_optical' #kilonova_optical, kilonova_uvboost_optical, shock_optical
+dist = 160 #mpc
 include_uv = 'uv' #uv, no_uv
-include_optical = ['u', 'g','r', 'i'] # ['u', 'g','r', 'i'], False
+include_optical = 'r' # ['u', 'g','r', 'I', 'z'], False
 print_progress=True
-method = 'test' #test, timeout, pool
+method = 'test' #test, timeout
 max_time = 100*60*60 # seconds, parameter for 'timeout' method
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
@@ -54,10 +54,10 @@ if not include_optical == False:
 
 
 #### READ DATA #########
-
 with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_ugriband.pkl','rb') as tf:
-        data_list = pickle.load(tf)
+    data_list = pickle.load(tf)
 ts_data, abmags_data, snrs, abmags_error = data_list
+
 
 
 ########## LOG PROBABILITIES ##########
@@ -74,7 +74,9 @@ if model == 'kilonova' or model == 'kilonova_uvboost':
         limits[4:6] = np.array(([1,10],[0.1,1]))  # opacities (cm^2/g)
     limits[6] = [4,5]
 elif model == 'shock':
-    limits=np.array(([0.01,10],[0.01,5],[0.01,3],[0.1,10])) #lim[[lower,upper],..
+    #limits=np.array(([0.01,10],[0.01,5],[0.01,3],[0.1,10])) #old broad
+    limits=np.array(([1,10],[0.5,5],[1,3],[1,10])) #lim[[lower,upper],..
+    # k in 0.1 cm^2/g, M in 0.01 solar masses, v in 0.1c, R_0 in 10^10 cm
     ndim = limits.shape[0]
     
 
