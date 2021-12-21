@@ -14,12 +14,13 @@ PyYAML = "^5.4.1"
 matplotlib = "^3.4.1"
 schwimmbad = "^0.3.2"
 kilonova-heating-rate = {git = "https://github.com/Basdorsman/kilonova-heating-rate.git", rev = "heating-beta-numba"}
-dorado-sensitivity = "^0.3.0"
 pandas = "^1.2.4"
 dorado-scheduling = {git = "https://github.com/nasa/dorado-scheduling.git", rev = "main"}
+dorado-sensitivity = {git = "https://github.com/nasa/dorado-sensitivity.git", rev = "add_D2"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+spyder-kernels = "^2.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
