@@ -8,13 +8,11 @@ Created on Thu Aug 19 09:28:48 2021
 
 from dynesty import NestedSampler
 import numpy as np
-from astropy.table import QTable
 from produce_lightcurve import Lightcurve
 import synphot as sp
 import dorado.sensitivity
 import astropy.units as u
 from astropy import constants as c
-import datetime
 import pickle 
 import time
 import os
@@ -23,17 +21,13 @@ import os
 model = 'shock' #shock, kilonova, kilonova_uvboost
 read_data = 'shock' #kilonova, kilonova_uvboost, shock
 dist = 40 #mpc
-include_uv = 'uv' #uv, no_uv
-include_optical = 'r' # ['u', 'g','r', 'I', 'z'], False
+include_uv = ['D1','D2'] # 'D1','['D1','D2'], False
+include_optical = 'r' # 'r', ['u', 'g','r', 'I', 'z'], False
 print_progress=True
 method = 'timeout' #test, timeout, pool
 max_time = 100*60*60 # seconds, parameter for 'timeout' method
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
-if include_optical == False:
-    bs_string = 'no_optical'
-else:
-    bs_string = ''.join(include_optical)
 distance = dist * u.Mpc
 heating = 'beta'
 time_data = 8 # parameter for '(...)_time' data
@@ -43,18 +37,31 @@ if model == 'shock':
 elif model == 'kilonova' or model == 'kilonova_uvboost':
     radiation = 'kilonova'
 
-if include_uv == 'uv':
-    b_dorado = dorado.sensitivity.bandpasses.NUV_D
-    bs = {'dorado' : b_dorado}
-elif include_uv == 'no_uv':
-    bs = {}
+
+bs = {}
+# Include uv bands
+if include_uv == False:
+    uv_string = 'no_uv'
+else:
+    uv_string = ''.join(include_uv)
+    if type(include_uv) == list:
+        for key in include_uv:
+            bs[key] = getattr(dorado.sensitivity.bandpasses, key)
+    elif type(include_uv) == str:
+        bs[include_uv] = getattr(dorado.sensitivity.bandpasses, include_uv)
+
+# Include optical bands
+if include_optical == False:
+    optical_string = 'no_optical'
+else:
+    optical_string = ''.join(include_optical)  
 if not include_optical == False:
     for key in include_optical: 
         bs[key] = sp.SpectralElement.from_file(f'input_files/bands/SLOAN_SDSS.{key}.dat')
 
 
 #### READ DATA #########
-with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_ugriband.pkl','rb') as tf:
+with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_D1D2.pkl','rb') as tf:
     data_list = pickle.load(tf)
 ts_data, abmags_data, snrs, abmags_error = data_list
 
@@ -170,12 +177,11 @@ if method == 'test':
     for key in bs:
         ax.plot(ts_data[key].to_value('day'),abmags_data[key],'x')
         ax.plot(ts_data[key].to_value('day'),abmags_model[key])
-    fig.savefig('output_files/plots/test.png')
+    # fig.savefig('output_files/plots/test.png')
 
 elif method == 'timeout' or method == 'pool':
     ########## NESTED SAMPLER #########
     start_time = time.time()
-    #folderstring = f'output_files/results/{model}model_{read_data}data_{dist}Mpc_{bs_string}band_{include_uv}'
     folderstring = f'output_files/results/{model}model_{read_data}data'
     try:
         os.mkdir(folderstring)
@@ -183,9 +189,8 @@ elif method == 'timeout' or method == 'pool':
     except:
         print(f'Directory already exists: {folderstring}')
 
-    #daytimestring = datetime.datetime.now().strftime("%y-%m-%d")
-    filestring = f'{dist}Mpc_{bs_string}band_{include_uv}'
-    with open(folderstring + f'/priorlims_{filestring}','wb') as kilonova_limits :
+    filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band'
+    with open(folderstring + f'/{filestring}_priorlims','wb') as kilonova_limits :
         pickle.dump(limits, kilonova_limits)
 
     if method == 'pool':
@@ -212,5 +217,5 @@ elif method == 'timeout' or method == 'pool':
         print('error in method')
 
     print("--- %s seconds ---" % (time.time() - start_time))
-    with open(folderstring + f'/results_{filestring}', 'wb') as kilonova_results :
+    with open(folderstring + f'/{filestring}_results', 'wb') as kilonova_results :
         pickle.dump(sampler.results, kilonova_results)
