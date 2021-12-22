@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # Output files
-output_files/plots/
-output_files/results/
-produce-data/plots/
-input_files/data/
+# output_files/plots/
+# output_files/results/
+# produce-data/plots/
+# input_files/data/
