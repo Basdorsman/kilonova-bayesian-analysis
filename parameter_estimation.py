@@ -27,10 +27,12 @@ print_progress=os.environ['print_progress']
 method = os.environ['method'] #'test', 'timeout', 'pool'
 max_time = os.environ['max_time'] # seconds, parameter for 'timeout' method
 
+
+
+
 ######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
 heating = 'beta'
-time_data = 8 # parameter for '(...)_time' data
 
 if model == 'shock':
     radiation = 'shock' 

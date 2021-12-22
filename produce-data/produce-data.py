@@ -23,7 +23,6 @@ dist = os.environ['dist']
 read_data = os.environ['read_data']
 delay = int(os.environ['delay']) # hours
 
-
 #### parameters
 if read_data == 'kilonova':
     mass = 0.05 * u.Msun
@@ -160,7 +159,6 @@ import pickle
 data = [t_data, abmags, snrs, AB_error]
 with open(f'./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay.pkl', 'wb') as tf:
     pickle.dump(data,tf)
-
 
 import matplotlib.pyplot as plt
 fig, ax = plt.subplots()
