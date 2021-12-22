@@ -20,17 +20,19 @@ import os
 ########### PARAMETERS, CHANGE HERE ##########
 model = 'shock' #shock, kilonova, kilonova_uvboost
 read_data = 'shock' #kilonova, kilonova_uvboost, shock
+delay = 0 #hours
 dist = 40 #mpc
-include_uv = ['D1','D2'] # 'D1','['D1','D2'], False
+include_uv = False # 'D1','['D1','D2'], False
 include_optical = 'r' # 'r', ['u', 'g','r', 'I', 'z'], False
 print_progress=True
 method = 'timeout' #test, timeout, pool
 max_time = 100*60*60 # seconds, parameter for 'timeout' method
 
+
+
 ######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
 heating = 'beta'
-time_data = 8 # parameter for '(...)_time' data
 
 if model == 'shock':
     radiation = 'shock' 
@@ -61,7 +63,7 @@ if not include_optical == False:
 
 
 #### READ DATA #########
-with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_D1D2.pkl','rb') as tf:
+with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_D1D2_{delay}hour_delay.pkl','rb') as tf:
     data_list = pickle.load(tf)
 ts_data, abmags_data, snrs, abmags_error = data_list
 
@@ -182,7 +184,7 @@ if method == 'test':
 elif method == 'timeout' or method == 'pool':
     ########## NESTED SAMPLER #########
     start_time = time.time()
-    folderstring = f'output_files/results/{model}model_{read_data}data'
+    folderstring = f'output_files/results/{model}model_{read_data}data_{delay}hour_delay'
     try:
         os.mkdir(folderstring)
         print(f'Created directory: {folderstring}')

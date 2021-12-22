@@ -21,9 +21,10 @@ import astropy.units as u
 
 dist = 40
 read_data = 'shock'
+delay = 1 # hours
+
 
 #### parameters
-
 if read_data == 'kilonova':
     mass = 0.05 * u.Msun
     velocities = np.asarray([0.1, 0.2, 0.4]) * c.c
@@ -44,6 +45,7 @@ elif read_data == 'shock':
     radiation = 'shock'
 
 distance = dist * u.Mpc
+time_delay = f'{delay}hour'
 
 b_D1 = dorado.sensitivity.bandpasses.D1
 b_D2 = dorado.sensitivity.bandpasses.D2
@@ -69,9 +71,11 @@ for band in bs_uv_name:
 
 
 # define optical observation time
-t_start = 12
-t_end = int(2*24)
+t_start = 12+delay
+t_end = int(2*24)+delay
 t_optical = np.linspace(t_start,t_end,int((t_end-t_start)/12+1))*u.hour
+
+
 
 ###### import event data, event number 10 is an example of successful detection
 colnames = ['alpha','alpha1','alpha2','alpha3','alpha4','alpha5','alpha6','amp_order','bandpass','beta','coa_phase','distance','eff_dist_g','eff_dist_h','eff_dist_l','eff_dist_t','eff_dist_v','end_time_gmst','eta','f_final','f_lower','g_end_time','g_end_time_ns','geocent_end_time','geocent_end_time_ns','h_end_time','h_end_time_ns','inclination','l_end_time','l_end_time_ns','latitude','longitude','mass1','mass2','mchirp','numrel_dat','numrel_mode_max','numrel_mode_min','phi0','polarization','process_id','psi0','psi3','simulation_id','source','spin1x','spin1y','spin1z','spin2x','spin2y','spin2z','t_end_time','t_end_time_ns','taper','theta0','v_end_time','v_end_time_ns','waveform','filler']
@@ -126,6 +130,8 @@ t_UV_data = t_exposure_concatenated[t_exposure_concatenated>start_time]*u.day
 len_to_remove = len(t_schedule_concatenated)-len(t_UV_data)
 t_UV_object = t_schedule_concatenated[len_to_remove:]
 coord_concatenated = coord_concatenated[len_to_remove:]
+# Implement delay, on t_UV_data only, not the t_UV_object because I want to keep the satellite-object relations the same.
+t_UV_data = np.asarray([element.value + delay/24 for element in t_UV_data])*u.day
 
 # Producing AB mags and corresponding SNRs
 lightcurve_object = Lightcurve(distance,heating_function='beta')
@@ -153,7 +159,7 @@ for b, b_name in zip(bs_optical, bs_optical_name):
 # SAVE DATA
 import pickle
 data = [t_data, abmags, snrs, AB_error]
-with open(f'../input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}.pkl', 'wb') as tf:
+with open(f'../input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{time_delay}_delay.pkl', 'wb') as tf:
     pickle.dump(data,tf)
 
 
