@@ -8,4 +8,4 @@
 #PBS -o /output_files/jobs/$PBS_JOBID.txt
 
 cd $PBS_O_WORKDIR
-poetry run python parameter_estimation_kilonova.py
+poetry run python parameter_estimation.py

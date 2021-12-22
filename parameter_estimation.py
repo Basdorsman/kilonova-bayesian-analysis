@@ -17,15 +17,15 @@ import pickle
 import time
 import os
 
-########### PARAMETERS, CHANGE HERE ##########
-model = 'shock' #shock, kilonova, kilonova_uvboost
-read_data = 'shock' #kilonova, kilonova_uvboost, shock
-dist = 40 #mpc
-include_uv = ['D1','D2'] # 'D1','['D1','D2'], False
-include_optical = 'r' # 'r', ['u', 'g','r', 'I', 'z'], False
-print_progress=True
-method = 'timeout' #test, timeout, pool
-max_time = 100*60*60 # seconds, parameter for 'timeout' method
+model = os.environ['model'] #shock, kilonova, kilonova_uvboost
+read_data = os.environ['read_data'] #kilonova, kilonova_uvboost, shock
+delay = os.environ['delay'] #hours
+dist = os.environ['dist'] #mpc
+include_uv = os.environ['include_uv'].split(',') # 'D1','['D1','D2'], ['False']
+include_optical = os.environ['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
+print_progress=os.environ['print_progress']
+method = os.environ['method'] #'test', 'timeout', 'pool'
+max_time = os.environ['max_time'] # seconds, parameter for 'timeout' method
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
@@ -40,7 +40,7 @@ elif model == 'kilonova' or model == 'kilonova_uvboost':
 
 bs = {}
 # Include uv bands
-if include_uv == False:
+if include_uv == ['False']:
     uv_string = 'no_uv'
 else:
     uv_string = ''.join(include_uv)
@@ -51,17 +51,20 @@ else:
         bs[include_uv] = getattr(dorado.sensitivity.bandpasses, include_uv)
 
 # Include optical bands
-if include_optical == False:
+if include_optical == ['False']:
     optical_string = 'no_optical'
 else:
     optical_string = ''.join(include_optical)  
-if not include_optical == False:
-    for key in include_optical: 
-        bs[key] = sp.SpectralElement.from_file(f'input_files/bands/SLOAN_SDSS.{key}.dat')
+    if type(include_optical) == list:
+        for key in include_optical:
+            bs[key] = sp.SpectralElement.from_file(f'input_files/bands/SLOAN_SDSS.{key}.dat')
+    elif type(include_optical) == str:
+        bs[include_optical] = sp.SpectralElement.from_file(f'input_files/bands/SLOAN_SDSS.{include_optical}.dat')
+     
 
 
 #### READ DATA #########
-with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_D1D2.pkl','rb') as tf:
+with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_D1D2_{delay}h_delay.pkl','rb') as tf:
     data_list = pickle.load(tf)
 ts_data, abmags_data, snrs, abmags_error = data_list
 
@@ -177,12 +180,13 @@ if method == 'test':
     for key in bs:
         ax.plot(ts_data[key].to_value('day'),abmags_data[key],'x')
         ax.plot(ts_data[key].to_value('day'),abmags_model[key])
-    # fig.savefig('output_files/plots/test.png')
-
+    print_string = f'output_files/plots/test_{model}model_{read_data}data_{delay}h_delay_{dist}Mpc_{optical_string}band_{uv_string}band.png'    
+    fig.savefig(print_string)
+    print(f'saved in {print_string}')
 elif method == 'timeout' or method == 'pool':
     ########## NESTED SAMPLER #########
     start_time = time.time()
-    folderstring = f'output_files/results/{model}model_{read_data}data'
+    folderstring = f'output_files/results/{model}model_{read_data}data_{delay}h_delay'
     try:
         os.mkdir(folderstring)
         print(f'Created directory: {folderstring}')
