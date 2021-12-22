@@ -45,18 +45,28 @@ elif read_data == 'shock':
 
 distance = dist * u.Mpc
 
-b_dorado = dorado.sensitivity.bandpasses.NUV_D
+b_D1 = dorado.sensitivity.bandpasses.D1
+b_D2 = dorado.sensitivity.bandpasses.D2
+bs_uv = [b_D1, b_D2]
+bs_uv_name = ['D1','D2']
+
+
 b_u = sp.SpectralElement.from_file('../input_files/bands/SLOAN_SDSS.u.dat')
 b_g = sp.SpectralElement.from_file('../input_files/bands/SLOAN_SDSS.g.dat')
 b_r = sp.SpectralElement.from_file('../input_files/bands/SLOAN_SDSS.r.dat')
 b_i = sp.SpectralElement.from_file('../input_files/bands/SLOAN_SDSS.i.dat')
-
 bs_optical = [b_u, b_g, b_r, b_i]
 bs_optical_name = ['u', 'g', 'r', 'i']
 
-bs_string  = ''
+
+bs_optical_string  = ''
 for band in bs_optical_name:
-    bs_string += band
+    bs_optical_string += band
+
+bs_uv_string  = ''
+for band in bs_uv_name:
+    bs_uv_string += band
+
 
 # define optical observation time
 t_start = 12
@@ -101,7 +111,7 @@ coord = schedule['center']
 coord_concatenated = coord
 
 orbits = 14
-start_time = 0.02
+start_time = 0.02 #days
 
 for i in range(orbits-1):
     delta_t = (i+1)*T_orbit
@@ -120,22 +130,19 @@ coord_concatenated = coord_concatenated[len_to_remove:]
 # Producing AB mags and corresponding SNRs
 lightcurve_object = Lightcurve(distance,heating_function='beta')
 
-t_data = {
-    'dorado' : t_UV_data #initiate dictionary with UV data, add optical later
-    }
 
-abmags = {
-    'dorado': lightcurve_object.calc_abmags(t_UV_data,theta,b_dorado,'dorado',radiation=radiation)
-    }
+# Initialize empty dictionaries
+t_data = {}
+abmags = {}
+snrs = {}  
+AB_error = {}
 
-snrs = {
-        'dorado' : lightcurve_object.calc_snrs_dorado(t_UV_data,theta,t_UV_object,coord_concatenated,radiation=radiation),
-        }
-        
-AB_error = {
-    'dorado' : mag_AB_error(snrs['dorado'])
-    }
-    
+for b, b_name in zip(bs_uv, bs_uv_name):
+    t_data[b_name] = t_UV_data
+    abmags[b_name] = lightcurve_object.calc_abmags(t_UV_data,theta,b,b_name,radiation=radiation)
+    snrs[b_name] = lightcurve_object.calc_snrs_dorado(t_UV_data,theta,t_UV_object,coord_concatenated,bandpass=b,radiation=radiation)
+    AB_error[b_name] = mag_AB_error(snrs[b_name])
+
 for b, b_name in zip(bs_optical, bs_optical_name):
     t_data[b_name] = t_optical
     abmags[b_name] = lightcurve_object.calc_abmags(t_optical,theta,b, b_name,radiation=radiation)
@@ -146,19 +153,21 @@ for b, b_name in zip(bs_optical, bs_optical_name):
 # SAVE DATA
 import pickle
 data = [t_data, abmags, snrs, AB_error]
-with open(f'../input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_{bs_string}band.pkl', 'wb') as tf:
+with open(f'../input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}.pkl', 'wb') as tf:
     pickle.dump(data,tf)
 
 
 import matplotlib.pyplot as plt
 fig, ax = plt.subplots()
 
-ax.errorbar(t_UV_data.to_value('day'), abmags['dorado'],yerr=AB_error['dorado'],label='dorado')
+for b_name in bs_uv_name:
+    ax.errorbar(t_UV_data.to_value('day'), abmags[b_name],yerr=AB_error[b_name],label=b_name)
 for b_name in bs_optical_name:
     ax.errorbar(t_optical.to_value('day'), abmags[b_name],yerr=AB_error[b_name],label=b_name)
     
 ax.legend()
-fig.savefig(f'test_{read_data}.png')
+fig.show()
+# fig.savefig(f'test_{read_data}.png')
 
 
 
