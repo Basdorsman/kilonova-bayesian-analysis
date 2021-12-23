@@ -25,7 +25,7 @@ include_uv = os.environ['include_uv'].split(',') # 'D1','['D1','D2'], ['False']
 include_optical = os.environ['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
 print_progress=os.environ['print_progress']
 method = os.environ['method'] #'test', 'timeout', 'pool'
-max_time = os.environ['max_time'] # seconds, parameter for 'timeout' method
+max_time = int(os.environ['max_time']) # seconds, parameter for 'timeout' method
 
 
 
