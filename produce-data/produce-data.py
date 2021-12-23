@@ -18,9 +18,11 @@ from bol_to_band import mag_AB_error
 import astropy.constants as c
 import astropy.units as u
 
+import sys
 import os
 dist = os.environ['dist']
-read_data = os.environ['read_data']
+#read_data = os.environ['read_data']
+read_data = sys.argv[1]
 delay = int(os.environ['delay']) # hours
 
 #### parameters

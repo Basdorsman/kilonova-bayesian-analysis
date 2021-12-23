@@ -20,6 +20,7 @@ This package uses poetry (https://python-poetry.org/).
 * [Dynesty]
 * [Kilonova-heating-rate]
 * [Schwimmbad]
+* [GNU Parallel]
 
 
 [Astropy]: https://www.astropy.org
@@ -28,3 +29,4 @@ This package uses poetry (https://python-poetry.org/).
 [Dynesty]: https://dynesty.readthedocs.io/en/latest/
 [Kilonova-heating-rate]: https://pypi.org/project/kilonova-heating-rate/
 [Schwimmbad]: https://schwimmbad.readthedocs.io/en/latest/
+[GNU Parallel]: https://www.gnu.org/software/parallel/
