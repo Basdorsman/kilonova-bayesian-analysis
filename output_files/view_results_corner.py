@@ -8,6 +8,33 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
 def cornerplot(model, samples, legend_texts, colors, smoother=2, plot_density=True, plot_datapoints=False, no_fill_contours=False, fill_contours=False ,quantiles=(0.16,0.5,0.84), levels=(1-np.exp(-0.5),1-np.exp(-2)),bins=20):
+    '''
+    Produces cornerplot using specified list of samples.
+    
+    This function produces a cornerplot with user specified samples, 
+    legend_texts, and colors. Various kwargs that corner uses are also
+    passed along. First, this function applies the correct fiducial parameter
+    values for each of the three models. Second, it correctly stacks multiple
+    plots and labels in my prefered way.
+    
+    Parameters:
+        model (str): kilonova, kilonova_uvboost or shock model.
+        samples (list): a single set or multiple sets of samples.
+        legend_texts (list or str): texts to go in the legen.d
+        colors (list or str): colors for each set of samples.
+        smoother (int): variable for Corner.
+        plot_density (bool): varialbe for Corner.
+        plot_datapoints (bool): variable for Corner. 
+        no_fill_contours (bool): variable for Corner. 
+        fill_contours (bool): variable for Corner.
+        quantiles (tuple): variable for Corner. The quantiles for verticle 
+                           lines.
+        levels (miscellaneous): variable for Corner. The surface outlines.
+        
+    Returns:
+        figure (figure object): the figure.
+    
+    '''
     # kilonova model
     if model == 'kilonova' or model == 'kilonova_uvboost':
         mass = 0.05
@@ -78,92 +105,55 @@ def cornerplot(model, samples, legend_texts, colors, smoother=2, plot_density=Tr
         
     return figure
 
-def get_samples(files):
+def get_samples(models, datas, delays, distances, opticalbands, uvbands):
+    '''Fetches results from various samplings.
+    
+    This function looks up requested sampling results and fetches results. All
+    parameters are strings or list of strings. But only one in total should be
+    a list of strings.
+    
+    Parameters:
+        models (str or list): analysis models.
+        datas (str or list): data models.
+        delays (str or list): hours of delay in dataset.
+        distances (str or list): distances to event in Mpc.
+        opticalbands (str or list): choices for optical bands.
+        uvbands (str or list): choices for uv bands.
+    
+    Returns:
+        samples: (list of numpy arrays): samples.
+        legend_texts (list): whichever parameter that was a list.
+        colors (str): colors, same length as the parameter that was a list, up 
+                      to three. 
+    '''
+    variablesForString = [models, datas, delays, distances, opticalbands, uvbands]
+    variableCount = 0
+    for variablesList in models, datas, delays, distances, opticalbands, uvbands:
+        if isinstance(variablesList,list):
+            files = []
+            legend_texts = variablesList
+            colors = 'rgb'[:len(variablesList)]
+            for variable in variablesList:
+                variablesForString[variableCount] = variable
+                model, data, delay, distance, opticalband, uvband = variablesForString
+                files.append(f'results/{model}model_{data}data_{delay}_delay/{distance}Mpc_{opticalband}band_{uvband}band_results')
+        variableCount += 1
     samples = []
     for file in files:
         with open(file,'rb') as analysis_results:
             samples.append(pickle.load(analysis_results).samples)
-    return(samples)
+    return(samples,legend_texts,colors)
 
 
-model = 'kilonova' # kilonova, kilonova_uvboost, shock
-plottype = 'uvoptical' #uvoptical, uv
+model = 'shock' # kilonova, kilonova_uvboost, shock
+datas = ['shock','kilonova']
+delay = '0h'
+distance = '40'
+opticalband = 'no_optical'
+uvband= 'D1'
 
-
-# model presets
-if plottype == 'uv':
-    data = 'no_opticalband_uv'    
-elif plottype == 'uvoptical':
-    distance = '160'
-    data = f'uv_vs_uvoptical_{distance}mpc'# no_opticalband_uv, uv_vs_uvoptical_{distance}mpc
-modeldata = f'{model}_{data}'
-
-
-if modeldata == 'kilonova_no_opticalband_uv':
-    files = ["kilonovamodel_kilonovadata_40Mpc/21-05-26 1442 results",
-             "kilonovamodel_kilonovadata_100Mpc/21-05-26 1526 results",
-             "kilonovamodel_kilonova_opticaldata_160Mpc_no_opticalband_uv/21-10-04 1224 results"][::-1]
-    legend_texts = [ 'Data at 40 Mpc','Data at 100 Mpc','Data at 160 Mpc'][::-1]
-    colors = ['blue','gold','red']
-elif modeldata == 'kilonova_uvboost_no_opticalband_uv':
-    files = [f"{model}model_{model}_opticaldata_40Mpc_{data}/21-10-21 0959 results",
-             f"{model}model_{model}_opticaldata_100Mpc_{data}/21-10-21 0905 results",
-             f"{model}model_{model}_opticaldata_160Mpc_{data}/21-10-04 1443 results"][::-1]
-    legend_texts = [ 'Data at 40 Mpc','Data at 100 Mpc','Data at 160 Mpc'][::-1]
-    colors = ['blue','gold','red']
-elif modeldata == 'kilonova_uvboost_uv_vs_uvoptical_40mpc':
-    files = [f"{model}model_{model}_opticaldata_{distance}Mpc_no_opticalband_uv/21-10-21 0959 results",
-             f"{model}model_{model}_opticaldata_{distance}Mpc_rband_uv/21-10-21 1228 results"]
-    legend_texts = [ f'Data at {distance} Mpc UV',f'Data at {distance} Mpc UV + Optical']
-    colors = ['blue','red']
-elif modeldata == 'kilonova_uvboost_uv_vs_uvoptical_100mpc':
-    files = [f"{model}model_{model}_opticaldata_{distance}Mpc_no_opticalband_uv/21-10-22 1431 results",
-             f"{model}model_{model}_opticaldata_{distance}Mpc_rband_uv/21-11-01 1104 results"]
-    legend_texts = [ f'Data at {distance} Mpc UV',f'Data at {distance} Mpc UV + Optical']
-    colors = ['blue','red']
-elif modeldata == 'kilonova_uvboost_uv_vs_uvoptical_160mpc':
-    files = [f"{model}model_{model}_opticaldata_{distance}Mpc_no_opticalband_uv/21-10-04 1443 results",
-             f"{model}model_{model}_opticaldata_{distance}Mpc_rband_uv/21-11-01 1212 results"]
-    legend_texts = [ f'Data at {distance} Mpc UV',f'Data at {distance} Mpc UV + Optical']
-    colors = ['blue','red']
-elif modeldata == 'kilonova_uv_vs_uvoptical_40mpc':
-    files = [f"{model}model_{model}_opticaldata_{distance}Mpc_no_opticalband_uv/21-09-10 1409 results",
-             f"{model}model_{model}_opticaldata_{distance}Mpc_rband_uv/21-08-30 1032 results"]
-    legend_texts = [ f'Data at {distance} Mpc UV',f'Data at {distance} Mpc UV + Optical']
-    colors = ['blue','red']
-elif modeldata == 'kilonova_uv_vs_uvoptical_100mpc':
-    files = [f"{model}model_{model}_opticaldata_100Mpc_no_opticalband_uv/21-10-22 1351 results",
-             f"{model}model_{model}_opticaldata_100Mpc_rband_uv/21-10-22 0910 results"]
-    legend_texts = [ f'Data at {distance} Mpc UV',f'Data at {distance} Mpc UV + Optical']
-    colors = ['blue','red']
-elif modeldata == 'kilonova_uv_vs_uvoptical_160mpc':
-    files = [f"{model}model_{model}_opticaldata_{distance}Mpc_no_opticalband_uv/21-10-04 1224 results",
-             f"{model}model_{model}_opticaldata_{distance}Mpc_rband_uv/21-10-22 1042 results"]
-    legend_texts = [ f'Data at {distance} Mpc UV',f'Data at {distance} Mpc UV + Optical']
-    colors = ['blue','red']
-elif modeldata == 'shock_no_opticalband_uv':
-    files = [f"{model}model_{model}_opticaldata_40Mpc_{data}/21-11-01 1036 results",
-             f"{model}model_{model}_opticaldata_100Mpc_{data}/21-11-01 1026 results",
-             f"{model}model_{model}_opticaldata_160Mpc_{data}/21-11-01 1041 results"][::-1]
-    legend_texts = [ 'Data at 40 Mpc','Data at 100 Mpc','Data at 160 Mpc'][::-1]
-    colors = ['blue','gold','red']
-elif modeldata == 'shock_uv_vs_uvoptical_100mpc':
-    files = [f"{model}model_{model}_opticaldata_{distance}Mpc_no_opticalband_uv/21-11-01 1026 results",
-             f"{model}model_{model}_opticaldata_{distance}Mpc_rband_uv/21-11-01 1324 results"]
-    legend_texts = [ f'Data at {distance} Mpc UV',f'Data at {distance} Mpc UV + Optical']
-    colors = ['blue','red']    
-elif modeldata == 'shock_uv_vs_uvoptical_160mpc':
-    files = [f"{model}model_{model}_opticaldata_{distance}Mpc_no_opticalband_uv/21-11-01 1041 results",
-             f"{model}model_{model}_opticaldata_{distance}Mpc_rband_uv/21-11-01 1403 results"]
-    legend_texts = [ f'Data at {distance} Mpc UV',f'Data at {distance} Mpc UV + Optical']
-    colors = ['blue','red']  
-
-
-samples = get_samples(files)
-figure = cornerplot(model,samples, legend_texts, colors)
-
-
+samples,legend_texts,colors = get_samples(model,datas,delay,distance,opticalband,uvband)
+figure = cornerplot(model, samples, legend_texts, colors)
 
 plt.show()
-figure.savefig(f'plots/{modeldata}.png',dpi=300,pad_inches=0.3,bbox_inches='tight')
 #figure.savefig('plots/test.png',dpi=300,pad_inches=0.3,bbox_inches='tight')
