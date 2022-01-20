@@ -15,24 +15,23 @@ import astropy.units as u
 from astropy import constants as c
 import pickle 
 import time
-import sys
 import os
+from parameters import getParameters
 
-# constant arguments
-model = os.environ['model'] #shock, kilonova, kilonova_uvboost
+# get parameters
+parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time'])
+
+model = parameters['model'] #shock, kilonova, kilonova_uvboost
 #read_data = os.environ['read_data'] #kilonova, kilonova_uvboost, shock
-delay = os.environ['delay'] #hours
-dist = os.environ['dist'] #mpc
+delay = parameters['delay'] #hours
+dist = parameters['dist'] #mpc
 #include_uv = os.environ['include_uv'].split(',') # 'D1','['D1','D2'], ['False']
-include_optical = os.environ['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
-print_progress=bool(int(os.environ['print_progress']))
-method = os.environ['method'] #'test', 'timeout', 'pool'
-max_time = int(os.environ['max_time']) # seconds, parameter for 'timeout' method
-
-
-# parallel arguments
-include_uv = sys.argv[1].split(',')
-read_data = sys.argv[2]
+include_optical = parameters['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
+print_progress=bool(int(parameters['print_progress']))
+method = parameters['method'] #'test', 'timeout', 'pool'
+max_time = int(parameters['max_time']) # seconds, parameter for 'timeout' method
+include_uv = parameters['include_uv'].split(',')
+read_data = parameters['read_data']
 
 
 ######## MORE PARAMETERS, DONT TOUCH ##########

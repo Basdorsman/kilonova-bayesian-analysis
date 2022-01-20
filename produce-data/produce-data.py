@@ -8,22 +8,22 @@ from importlib import resources
 from astropy.table import QTable
 from astropy_healpix import HEALPix
 import dorado.sensitivity
+import astropy.constants as c
+import astropy.units as u
 
 ###### .py files in parent directory
 import sys
 sys.path.insert(0, './')
 from produce_lightcurve import Lightcurve
 from bol_to_band import mag_AB_error
+from parameters import getParameters
 
-import astropy.constants as c
-import astropy.units as u
+# get parameters
+parameters = getParameters(osargs_list=['delay','dist','read_data'])
 
-import sys
-import os
-dist = os.environ['dist']
-#read_data = os.environ['read_data']
-read_data = sys.argv[1]
-delay = int(os.environ['delay']) # hours
+dist = parameters['dist']
+read_data = parameters['read_data']
+delay = int(parameters['delay']) # hours
 
 #### parameters
 if read_data == 'kilonova':
