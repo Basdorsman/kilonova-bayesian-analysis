@@ -22,10 +22,8 @@ from parameters import getParameters
 parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time'])
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
-#read_data = os.environ['read_data'] #kilonova, kilonova_uvboost, shock
 delay = parameters['delay'] #hours
 dist = parameters['dist'] #mpc
-#include_uv = os.environ['include_uv'].split(',') # 'D1','['D1','D2'], ['False']
 include_optical = parameters['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
 print_progress=bool(int(parameters['print_progress']))
 method = parameters['method'] #'test', 'timeout', 'pool'
@@ -155,7 +153,10 @@ if method == 'test':
         #uniform_random = np.random.rand(ndim)
         #theta = priortransform(uniform_random)
         #### parameters
-        theta = np.array((0.05,0.1,0.2,0.4,3.0,0.5,4.5))
+        if model == 'kilonova':
+            theta = np.array((0.05,0.1,0.2,0.4,3.0,0.5,4.5))
+        elif model == 'kilonova_uvboost':
+            theta = np.array((0.05,0.1,0.2,0.23,3.0,0.04,4.5))
         logl = loglikelihood(theta)
         print('theta: ',theta)
         print('log(likelihood): ', logl)
@@ -200,32 +201,35 @@ elif method == 'timeout' or method == 'pool':
         print(f'Directory already exists: {folderstring}')
 
     filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band'
-    with open(folderstring + f'/{filestring}_priorlims','wb') as kilonova_limits :
-        pickle.dump(limits, kilonova_limits)
-
-    if method == 'pool':
-        from schwimmbad import MultiPool
-        print('initiating sampler...')
-        with MultiPool() as pool:
-            sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool)
-            print('poolsize = ',pool.size)
-            sampler.run_nested(print_progress=print_progress)
+    if not os.path.exists(folderstring+f'/{filestring}_results'):
+        with open(folderstring+f'/{filestring}_priorlims','wb') as kilonova_limits :
+            pickle.dump(limits, kilonova_limits)
     
-    elif method == 'timeout':
-        from Timeout import timeout
-        print('initiating sampler...')
-        sampler_start = time.time()
-        sampler = NestedSampler(loglikelihood, priortransform, ndim)
-        sampler_time = int(np.ceil(time.time()-sampler_start))
-        print(f'sampler initiated in {sampler_time} seconds')
-        try:
-            with timeout(seconds=max_time-sampler_time):
+        if method == 'pool':
+            from schwimmbad import MultiPool
+            print('initiating sampler...')
+            with MultiPool() as pool:
+                sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool)
+                print('poolsize = ',pool.size)
                 sampler.run_nested(print_progress=print_progress)
-        except TimeoutError:
-            pass
+        
+        elif method == 'timeout':
+            from Timeout import timeout
+            print('initiating sampler...')
+            sampler_start = time.time()
+            sampler = NestedSampler(loglikelihood, priortransform, ndim)
+            sampler_time = int(np.ceil(time.time()-sampler_start))
+            print(f'sampler initiated in {sampler_time} seconds')
+            try:
+                with timeout(seconds=max_time-sampler_time):
+                    sampler.run_nested(print_progress=print_progress)
+            except TimeoutError:
+                pass
+        else:
+            print('error in method')
+    
+        print("--- %s seconds ---" % (time.time() - start_time))
+        with open(folderstring + f'/{filestring}_results', 'wb') as kilonova_results :
+            pickle.dump(sampler.results, kilonova_results)
     else:
-        print('error in method')
-
-    print("--- %s seconds ---" % (time.time() - start_time))
-    with open(folderstring + f'/{filestring}_results', 'wb') as kilonova_results :
-        pickle.dump(sampler.results, kilonova_results)
+        print(f'{filestring}_results already exists, skipping...')

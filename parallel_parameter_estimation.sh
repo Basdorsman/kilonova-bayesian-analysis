@@ -5,7 +5,7 @@
 # If an argument will remain the same throughout all jobs it is a constant argument. If it changes, it is a parallel argument. In the latter case the variable must be formatted as: variable='variable=firstvalue variable=secondvalue'.
 
 # constant arguments
-method='test' #test, timeout
+method='timeout' #test, timeout
 delay=0
 print_progress='0' #'0'=False
 max_time=360000
