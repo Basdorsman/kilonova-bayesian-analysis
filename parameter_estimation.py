@@ -19,18 +19,18 @@ import os
 from parameters import getParameters
 
 # get parameters
-parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time'])
+parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample'])
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
 delay = parameters['delay'] #hours
 dist = parameters['dist'] #mpc
 include_optical = parameters['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
-print_progress=bool(int(parameters['print_progress']))
+print_progress=parameters['print_progress']=='True'
 method = parameters['method'] #'test', 'timeout', 'pool'
 max_time = int(parameters['max_time']) # seconds, parameter for 'timeout' method
 include_uv = parameters['include_uv'].split(',')
 read_data = parameters['read_data']
-
+sample_method = parameters['sample']
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
@@ -68,7 +68,7 @@ else:
 
 
 #### READ DATA #########
-with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_D1D2_{delay}h_delay.pkl','rb') as tf:
+with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_NUV_DD1D2_{delay}h_delay.pkl','rb') as tf:
     data_list = pickle.load(tf)
 ts_data, abmags_data, snrs, abmags_error = data_list
 
@@ -217,7 +217,7 @@ elif method == 'timeout' or method == 'pool':
             from Timeout import timeout
             print('initiating sampler...')
             sampler_start = time.time()
-            sampler = NestedSampler(loglikelihood, priortransform, ndim)
+            sampler = NestedSampler(loglikelihood, priortransform, ndim,sample=sample_method)
             sampler_time = int(np.ceil(time.time()-sampler_start))
             print(f'sampler initiated in {sampler_time} seconds')
             try:

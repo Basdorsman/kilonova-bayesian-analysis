@@ -47,10 +47,11 @@ elif read_data == 'shock':
 
 distance = dist * u.Mpc
 
+b_NUVD = dorado.sensitivity.bandpasses.NUV_D
 b_D1 = dorado.sensitivity.bandpasses.D1
 b_D2 = dorado.sensitivity.bandpasses.D2
-bs_uv = [b_D1, b_D2]
-bs_uv_name = ['D1','D2']
+bs_uv = [b_NUVD, b_D1, b_D2]
+bs_uv_name = ['NUV_D','D1','D2']
 
 
 b_u = sp.SpectralElement.from_file('./input_files/bands/SLOAN_SDSS.u.dat')
