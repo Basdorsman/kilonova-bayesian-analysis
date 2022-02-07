@@ -19,36 +19,18 @@ time_data = 12
 method = 'pool'
 max_time = 100*60*60 # seconds, 'timeout' method
 
-if read_data == 'kilonova_uvboost':
-    ########## READ DATA KILONOVA ##########
-    data = QTable.read(f'input_files/SNR_fiducial_{read_data}_{dist}Mpc_{time_data}hours.ecsv')
-    AB_mag_data=data['AB magnitude'].data
-    t_data=data['exposure times']
-    SNR = data['SNR'].data
-    AB_error = data['AB mag errorbar'].data
-elif read_data == 'kilonova_uvboost_old':
-    ########## READ DATA KILONOVA ##########
-    data = QTable.read(f'input_files/SNR_fiducial_{read_data}_{dist}Mpc.ecsv')
-    AB_mag_data=data['AB magnitude'].data
-    t_data=data['exposure times']
-    SNR = data['SNR'].data
-    AB_error = data['AB mag errorbar'].data
-elif read_data == 'kilonova':
-    ########## READ DATA KILONOVA ##########
-    data = QTable.read(f'input_files/SNR_fiducial_{read_data}_{dist}Mpc.ecsv')
-    AB_mag_data=data['AB magnitude'].data
-    t_data=data['exposure times']
-    SNR = data['SNR'].data
-    AB_error = data['AB mag errorbar'].data
-elif read_data == 'shock':
-    ########## READ DATA SHOCK ##########
-    data = QTable.read(f'input_files/SNR_fiducial_shock_{dist}Mpc.ecsv')
-    AB_mag_data=data['AB magnitude'].data
-    t_data=data['exposure times'].value*u.day
-    SNR = data['SNR'].data
-    AB_error = data['AB mag errorbar']
-else:
-    print('error reading data')
+
+
+############ READ DATA ###################
+with open(f'input_files/SNR_fiducial_shock_40Mpc_opticalbands_ugri_uvbands_NUV_DD1D2_0h_delay.pkl','rb') as tf:
+    data_list = pickle.load(tf)
+ts_data, abmags_data, snrs, abmags_error = data_list
+
+t_data = ts_data['NUV_D']
+AB_mag_data=abmags_data['NUV_D']
+AB_error = abmags_error['NUV_D']
+
+
 
 ########## DEFINE MODEL ##########
 lightcurve_object = Lightcurve(distance, heating_function=heating)
@@ -123,7 +105,7 @@ elif method == 'timeout' or method == 'pool':
         from schwimmbad import MultiPool
         print('initiating sampler...')
         with MultiPool() as pool:
-            sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool)
+            sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool, dlogz=10)
             print('poolsize = ',pool.size)
             sampler.run_nested(print_progress=True)
     
