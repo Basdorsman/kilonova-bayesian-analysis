@@ -8,6 +8,7 @@ import datetime
 import pickle 
 import time
 import os
+import dorado.sensitivity
 
 ########### PARAMETERS ##########
 dist = 40
@@ -31,14 +32,6 @@ AB_mag_data=abmags_data['NUV_D']
 AB_error = abmags_error['NUV_D']
 
 
-
-########## DEFINE MODEL ##########
-lightcurve_object = Lightcurve(distance, heating_function=heating)
-
-def kilonova_model(t,theta_reshaped):
-    abmags = lightcurve_object.calc_abmags_kilonova(t,theta_reshaped)
-    return abmags
-
 ########## LOG PROBABILITIES ##########
 ndim = 7 
 limits = np.ndarray((ndim,2),dtype=object)
@@ -53,6 +46,12 @@ else:
 limits[6] = [4,5]
 
 
+##### DEFINE MODEL #####
+bs={}
+bs['NUV_D'] = dorado.sensitivity.bandpasses.NUV_D
+lightcurve_object = Lightcurve(distance, heating_function=heating)
+radiation='kilonova'
+
 def priortransform(uniform): 
     mass = (limits[0,1]-limits[0,0])*uniform[0]+limits[0,0]
     #velocities = (limits[1:4,1]-limits[1:4,0])*uniform[1:4]+limits[1:4,0]
@@ -63,14 +62,21 @@ def priortransform(uniform):
     opacities = (limits[4:6,1]-limits[4:6,0])*uniform[4:6]+limits[4:6,0]
     n = (limits[6,1]-limits[6,0])*uniform[6]+limits[6,0]
     theta = np.array([mass, v_min, v_k, v_max, opacities[0], opacities[1], n]) #for postprocessing
-    return theta
+    return theta    
 
-# log_likelihood
+def lightcurve_model(t,theta_reshaped,bandpasses):
+    abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation)
+    return abmags
+
 def loglikelihood(theta):
     theta_reshaped = np.array((theta[0] * u.Msun, np.array((theta[1], theta[2], theta[3])) * c.c, np.array((theta[4], theta[5])) * u.cm**2 / u.g, theta[6]), dtype= 'object')
-    AB_mag_model = kilonova_model(t_data,theta_reshaped)
-    sigma2 = AB_error**2
-    return -0.5 * np.sum((AB_mag_data - AB_mag_model) ** 2 / sigma2 + np.log(2*np.pi*sigma2))
+    sigmas2 = {}
+    loglikelihood = {}
+    abmags_model = lightcurve_model(ts_data, theta_reshaped, bs)
+    for key in bs:
+        sigmas2[key] = abmags_error[key]**2
+        loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
+    return sum(loglikelihood.values())
 
 
 if method == 'test':
