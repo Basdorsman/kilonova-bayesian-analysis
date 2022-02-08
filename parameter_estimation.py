@@ -1,4 +1,4 @@
-from dynesty import NestedSampler
+#from dynesty import NestedSampler
 import numpy as np
 from produce_lightcurve import Lightcurve
 import synphot as sp
@@ -9,6 +9,7 @@ import pickle
 import time
 import os
 from parameters import getParameters
+from pymultinest.solve import solve
 
 # get parameters
 #parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample','run_mode'])
@@ -224,17 +225,9 @@ elif method == 'timeout' or method == 'pool':
                     sampler.run_nested(print_progress=print_progress)
             
             elif method == 'timeout':
-                from Timeout import timeout
-                print('initiating sampler...')
-                sampler_start = time.time()
-                sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample_method)
-                sampler_time = int(np.ceil(time.time()-sampler_start))
-                print(f'sampler initiated in {sampler_time} seconds')
-                try:
-                    with timeout(seconds=max_time-sampler_time):
-                        sampler.run_nested(print_progress=print_progress)
-                except TimeoutError:
-                    pass
+                print('Start multinest')
+                sampler = solve(LogLikelihood=loglikelihood, Prior=priortransform, n_live_point=500, evidence_tolerance=10000,ndim=ndim,sampling_efficiency=0.8,outpufiles_basename=folderstring+filestring+'multinest', verbose=True,importance_nested_sampling=False,multimodal=False)
+                
             else:
                 print('error in method')
         
