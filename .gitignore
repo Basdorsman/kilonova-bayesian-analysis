@@ -136,3 +136,6 @@ input_files/data/
 
 # .DS_Store
 **/.DS_Store
+
+# .bak files
+**.bak

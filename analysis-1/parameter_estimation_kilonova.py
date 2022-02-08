@@ -108,38 +108,103 @@ else:
     limits[4:6] = np.array(([1,10],[0.1,1]))  # opacities (cm^2/g)
 limits[6] = [4,5]
 
+# if model == 'kilonova' or model == 'kilonova_uvboost':
+    # ndim = 7 
+    # limits = np.ndarray((ndim,2),dtype=object)
+    # limits[0] = [0.01, 0.1]  # mass (solar masses)
+    # if model == 'kilonova_uvboost':
+        # limits[1:4] = np.array(([0.05, 0.2], ['vmin', 'vmax'], [0.21, 0.8]),dtype=object)  # velocities (cm/s)
+        # limits[4:6] = np.array(([1,10],[0.01,0.1]))  # opacities (cm^2/g)
+    # elif model == 'kilonova':
+        # limits[1:4] = np.array(([0.05, 0.2], ['vmin', 'vmax'], [0.3, 0.8]),dtype=object)  # velocities (cm/s)
+        # limits[4:6] = np.array(([1,10],[0.1,1]))  # opacities (cm^2/g)
+    # limits[6] = [4,5]
+# elif model == 'shock':
+    # #limits=np.array(([0.01,10],[0.01,5],[0.01,3],[0.1,10])) #old broad
+    # limits=np.array(([1,10],[0.5,5],[1,3],[1,10])) #lim[[lower,upper],..
+    # # k in 0.1 cm^2/g, M in 0.01 solar masses, v in 0.1c, R_0 in 10^10 cm
+    # ndim = limits.shape[0]
 
 ##### DEFINE MODEL #####
-bs={}
-bs['NUV_D'] = dorado.sensitivity.bandpasses.NUV_D
+# bs={}
+# bs['NUV_D'] = dorado.sensitivity.bandpasses.NUV_D
+# lightcurve_object = Lightcurve(distance, heating_function=heating)
+# radiation='kilonova'
+
+# def priortransform(uniform): 
+    # mass = (limits[0,1]-limits[0,0])*uniform[0]+limits[0,0]
+    # #velocities = (limits[1:4,1]-limits[1:4,0])*uniform[1:4]+limits[1:4,0]
+    # v_min = (limits[1,1]-limits[1,0])*uniform[1]+limits[1,0]
+    # v_max = (limits[3,1]-limits[3,0])*uniform[2]+limits[3,0]
+    # v_k = (v_max-v_min)*uniform[3]+v_min
+    # #velocities = np.array([v_min, v_k, v_max])
+    # opacities = (limits[4:6,1]-limits[4:6,0])*uniform[4:6]+limits[4:6,0]
+    # n = (limits[6,1]-limits[6,0])*uniform[6]+limits[6,0]
+    # theta = np.array([mass, v_min, v_k, v_max, opacities[0], opacities[1], n]) #for postprocessing
+    # return theta    
+
+# def lightcurve_model(t,theta_reshaped,bandpasses):
+    # abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation)
+    # return abmags
+
+# def loglikelihood(theta):
+    # theta_reshaped = np.array((theta[0] * u.Msun, np.array((theta[1], theta[2], theta[3])) * c.c, np.array((theta[4], theta[5])) * u.cm**2 / u.g, theta[6]), dtype= 'object')
+    # sigmas2 = {}
+    # loglikelihood = {}
+    # abmags_model = lightcurve_model(ts_data, theta_reshaped, bs)
+    # for key in bs:
+        # sigmas2[key] = abmags_error[key]**2
+        # loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
+    # return sum(loglikelihood.values())
+    
 lightcurve_object = Lightcurve(distance, heating_function=heating)
-radiation='kilonova'
 
-def priortransform(uniform): 
-    mass = (limits[0,1]-limits[0,0])*uniform[0]+limits[0,0]
-    #velocities = (limits[1:4,1]-limits[1:4,0])*uniform[1:4]+limits[1:4,0]
-    v_min = (limits[1,1]-limits[1,0])*uniform[1]+limits[1,0]
-    v_max = (limits[3,1]-limits[3,0])*uniform[2]+limits[3,0]
-    v_k = (v_max-v_min)*uniform[3]+v_min
-    #velocities = np.array([v_min, v_k, v_max])
-    opacities = (limits[4:6,1]-limits[4:6,0])*uniform[4:6]+limits[4:6,0]
-    n = (limits[6,1]-limits[6,0])*uniform[6]+limits[6,0]
-    theta = np.array([mass, v_min, v_k, v_max, opacities[0], opacities[1], n]) #for postprocessing
-    return theta    
+if model == 'kilonova' or model == 'kilonova_uvboost':
 
-def lightcurve_model(t,theta_reshaped,bandpasses):
-    abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation)
-    return abmags
+    def priortransform(uniform): 
+        mass = (limits[0,1]-limits[0,0])*uniform[0]+limits[0,0]
+        #velocities = (limits[1:4,1]-limits[1:4,0])*uniform[1:4]+limits[1:4,0]
+        v_min = (limits[1,1]-limits[1,0])*uniform[1]+limits[1,0]
+        v_max = (limits[3,1]-limits[3,0])*uniform[2]+limits[3,0]
+        v_k = (v_max-v_min)*uniform[3]+v_min
+        #velocities = np.array([v_min, v_k, v_max])
+        opacities = (limits[4:6,1]-limits[4:6,0])*uniform[4:6]+limits[4:6,0]
+        n = (limits[6,1]-limits[6,0])*uniform[6]+limits[6,0]
+        theta = np.array([mass, v_min, v_k, v_max, opacities[0], opacities[1], n]) #for postprocessing
+        return theta    
 
-def loglikelihood(theta):
-    theta_reshaped = np.array((theta[0] * u.Msun, np.array((theta[1], theta[2], theta[3])) * c.c, np.array((theta[4], theta[5])) * u.cm**2 / u.g, theta[6]), dtype= 'object')
-    sigmas2 = {}
-    loglikelihood = {}
-    abmags_model = lightcurve_model(ts_data, theta_reshaped, bs)
-    for key in bs:
-        sigmas2[key] = abmags_error[key]**2
-        loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
-    return sum(loglikelihood.values())
+    def lightcurve_model(t,theta_reshaped,bandpasses):
+        abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation)
+        return abmags
+
+    def loglikelihood(theta):
+        theta_reshaped = np.array((theta[0] * u.Msun, np.array((theta[1], theta[2], theta[3])) * c.c, np.array((theta[4], theta[5])) * u.cm**2 / u.g, theta[6]), dtype= 'object')
+        sigmas2 = {}
+        loglikelihood = {}
+        abmags_model = lightcurve_model(ts_data, theta_reshaped, bs)
+        for key in bs:
+            sigmas2[key] = abmags_error[key]**2
+            loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
+        return sum(loglikelihood.values())
+    
+elif model == 'shock':
+
+    def priortransform(u):
+        theta = (limits[:,1]-limits[:,0])*u+limits[:,0]
+        return theta
+    
+    def lightcurve_model(t, theta, bandpasses):
+        abmags = lightcurve_object.calc_abmags_combined(t,theta,bandpasses,radiation=radiation)
+        return abmags
+    
+    def loglikelihood(theta):
+        sigmas2 = {}
+        loglikelihood = {}
+        abmags_model = lightcurve_model(ts_data, theta, bs)
+        for key in bs:
+            sigmas2[key] = abmags_error[key]**2
+            loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
+        return sum(loglikelihood.values())
 
 
 if method == 'test':
