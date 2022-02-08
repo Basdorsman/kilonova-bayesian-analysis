@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Aug 19 09:28:48 2021
-
-@author: basdorsman
-"""
-
 from dynesty import NestedSampler
 import numpy as np
 from produce_lightcurve import Lightcurve
@@ -19,7 +11,20 @@ import os
 from parameters import getParameters
 
 # get parameters
-parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample','dlogz'])
+#parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample','run_mode'])
+parameters = {
+    'model' : 'kilonova_uvboost',
+    'delay' : 0,
+    'dist' : 40,
+    'include_optical' : 'False',
+    'print_progress' : 'True',
+    'method' : 'timeout',
+    'max_time' : 360000,
+    'include_uv' : 'NUV_D',
+    'read_data' : 'shock',
+    'sample' : 'auto',
+    'run_mode' : 'external'
+    }
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
 delay = parameters['delay'] #hours
@@ -31,7 +36,7 @@ max_time = int(parameters['max_time']) # seconds, parameter for 'timeout' method
 include_uv = parameters['include_uv'].split(',')
 read_data = parameters['read_data']
 sample_method = parameters['sample']
-dlogz=parameters['dlogz']
+run_mode = parameters['run_mode']
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
@@ -111,7 +116,7 @@ if model == 'kilonova' or model == 'kilonova_uvboost':
         opacities = (limits[4:6,1]-limits[4:6,0])*uniform[4:6]+limits[4:6,0]
         n = (limits[6,1]-limits[6,0])*uniform[6]+limits[6,0]
         theta = np.array([mass, v_min, v_k, v_max, opacities[0], opacities[1], n]) #for postprocessing
-        return theta    
+        return theta
 
     def lightcurve_model(t,theta_reshaped,bandpasses):
         abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation)
@@ -191,8 +196,9 @@ if method == 'test':
     print_string = f'output_files/plots/test_{model}model_{read_data}data_{delay}h_delay_{dist}Mpc_{optical_string}band_{uv_string}band.png'    
     fig.savefig(print_string)
     print(f'saved in {print_string}')
-elif method == 'timeout' or method == 'pool':
+
     ########## NESTED SAMPLER #########
+elif method == 'timeout' or method == 'pool':
     start_time = time.time()
     folderstring = f'output_files/results/{model}model_{read_data}data_{delay}h_delay'
     try:
@@ -203,34 +209,57 @@ elif method == 'timeout' or method == 'pool':
 
     filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band'
     if not os.path.exists(folderstring+f'/{filestring}_results'):
-        with open(folderstring+f'/{filestring}_priorlims','wb') as kilonova_limits :
-            pickle.dump(limits, kilonova_limits)
-    
-        if method == 'pool':
-            from schwimmbad import MultiPool
-            print('initiating sampler...')
-            with MultiPool() as pool:
-                sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool,sample=sample_method,dlogz=dlogz)
-                print('poolsize = ',pool.size)
-                sampler.run_nested(print_progress=print_progress)
-        
-        elif method == 'timeout':
-            from Timeout import timeout
-            print('initiating sampler...')
-            sampler_start = time.time()
-            sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample_method, dlogz=dlogz)
-            sampler_time = int(np.ceil(time.time()-sampler_start))
-            print(f'sampler initiated in {sampler_time} seconds')
-            try:
-                with timeout(seconds=max_time-sampler_time):
+        with open(folderstring+f'/{filestring}_priorlims','wb') as prior_limits :
+            pickle.dump(limits, prior_limits)
+        with open(folderstring+f'/{filestring}_parameters','wb') as input_parameters :
+            pickle.dump(parameters,input_parameters)
+        if run_mode == 'internal':
+            print('internal sampler')
+            if method == 'pool':
+                from schwimmbad import MultiPool
+                print('initiating sampler...')
+                with MultiPool() as pool:
+                    sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool,sample=sample_method)
+                    print('poolsize = ',pool.size)
                     sampler.run_nested(print_progress=print_progress)
-            except TimeoutError:
-                pass
-        else:
-            print('error in method')
-    
-        print("--- %s seconds ---" % (time.time() - start_time))
-        with open(folderstring + f'/{filestring}_results', 'wb') as kilonova_results :
-            pickle.dump(sampler.results, kilonova_results)
+            
+            elif method == 'timeout':
+                from Timeout import timeout
+                print('initiating sampler...')
+                sampler_start = time.time()
+                sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample_method)
+                sampler_time = int(np.ceil(time.time()-sampler_start))
+                print(f'sampler initiated in {sampler_time} seconds')
+                try:
+                    with timeout(seconds=max_time-sampler_time):
+                        sampler.run_nested(print_progress=print_progress)
+                except TimeoutError:
+                    pass
+            else:
+                print('error in method')
+        
+            print("--- %s seconds ---" % (time.time() - start_time))
+            with open(folderstring + f'/{filestring}_results', 'wb') as kilonova_results :
+                pickle.dump(sampler.results, kilonova_results)
+        elif run_mode == 'external':
+            #if not path exists...
+            if method == 'pool':
+                print('no external pool mode yet')
+            if method == 'timeout':
+                print('initiating sampler...')
+                sampler_start = time.time()
+                sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample_method)
+                for it, res in enumerate(sampler.sample(dlogz=10000)):
+                    print(f'it: {it}, delta_logz: {res[-1]}')
+                    pass
+                sampler.results.summary()
+                
+                # Adding the final set of live points.
+                for it_final, res in enumerate(sampler.add_live_points()):
+                    pass
+                sampler.results.summary()
     else:
         print(f'{filestring}_results already exists, skipping...')
+    
+        
+        
