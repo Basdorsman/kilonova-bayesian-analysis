@@ -19,7 +19,7 @@ import os
 from parameters import getParameters
 
 # get parameters
-parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample'])
+parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample','dlogz'])
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
 delay = parameters['delay'] #hours
@@ -31,6 +31,7 @@ max_time = int(parameters['max_time']) # seconds, parameter for 'timeout' method
 include_uv = parameters['include_uv'].split(',')
 read_data = parameters['read_data']
 sample_method = parameters['sample']
+dlogz=parameters['dlogz']
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
@@ -209,7 +210,7 @@ elif method == 'timeout' or method == 'pool':
             from schwimmbad import MultiPool
             print('initiating sampler...')
             with MultiPool() as pool:
-                sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool)
+                sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool,sample=sample_method,dlogz=dlogz)
                 print('poolsize = ',pool.size)
                 sampler.run_nested(print_progress=print_progress)
         
@@ -217,7 +218,7 @@ elif method == 'timeout' or method == 'pool':
             from Timeout import timeout
             print('initiating sampler...')
             sampler_start = time.time()
-            sampler = NestedSampler(loglikelihood, priortransform, ndim,sample=sample_method)
+            sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample_method, dlogz=dlogz)
             sampler_time = int(np.ceil(time.time()-sampler_start))
             print(f'sampler initiated in {sampler_time} seconds')
             try:

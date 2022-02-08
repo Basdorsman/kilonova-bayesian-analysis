@@ -1,14 +1,15 @@
 read_data=shock
 model=kilonova_uvboost
-method=test
+method=pool
 dist=40
 delay=0
 print_progress=True
 max_time=360000
 include_optical=False
-include_uv=D1
+include_uv=NUV_D
 sample=auto
-export read_data model method dist delay print_progress max_time include_optical include_uv sample
+dlogz=10
+export read_data model method dist delay print_progress max_time include_optical include_uv sample dlogz
 
 ## example of nested loop
 #for read_data in 'shock' 'kilonova'; do
