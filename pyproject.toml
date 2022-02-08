@@ -18,6 +18,7 @@ pandas = "^1.2.4"
 dorado-scheduling = {git = "https://github.com/nasa/dorado-scheduling.git", rev = "main"}
 dorado-sensitivity = {git = "https://github.com/nasa/dorado-sensitivity.git", rev = "add_D2"}
 corner = "^2.2.1"
+pymultinest = "^2.11"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
