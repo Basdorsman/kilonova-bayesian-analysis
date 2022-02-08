@@ -1,35 +1,98 @@
+# from dynesty import NestedSampler
+# import numpy as np
+# from astropy.table import QTable
+# from produce_lightcurve import Lightcurve
+# import astropy.units as u
+# from astropy import constants as c
+import datetime
+# import pickle 
+# import time
+# import os
+# import dorado.sensitivity
+
 from dynesty import NestedSampler
 import numpy as np
-from astropy.table import QTable
 from produce_lightcurve import Lightcurve
+import synphot as sp
+import dorado.sensitivity
 import astropy.units as u
 from astropy import constants as c
-import datetime
 import pickle 
 import time
 import os
-import dorado.sensitivity
+from parameters import getParameters
 
 ########### PARAMETERS ##########
-dist = 40
+# get parameters
+parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample','dlogz'])
+
+model = parameters['model'] #shock, kilonova, kilonova_uvboost
+delay = parameters['delay'] #hours
+dist = parameters['dist'] #mpc
+include_optical = parameters['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
+print_progress=parameters['print_progress']=='True'
+method = parameters['method'] #'test', 'timeout', 'pool'
+max_time = int(parameters['max_time']) # seconds, parameter for 'timeout' method
+include_uv = parameters['include_uv'].split(',')
+read_data = parameters['read_data']
+sample_method = parameters['sample']
+dlogz=parameters['dlogz']
+
+######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
 heating = 'beta'
-model = 'kilonova_uvboost'
-read_data = 'shock'
+
+if model == 'shock':
+    radiation = 'shock' 
+elif model == 'kilonova' or model == 'kilonova_uvboost':
+    radiation = 'kilonova'
+
+
+bs = {}
+# Include uv bands
+if include_uv == ['False']:
+    uv_string = 'no_uv'
+else:
+    uv_string = ''.join(include_uv)
+    if type(include_uv) == list:
+        for key in include_uv:
+            bs[key] = getattr(dorado.sensitivity.bandpasses, key)
+    elif type(include_uv) == str:
+        bs[include_uv] = getattr(dorado.sensitivity.bandpasses, include_uv)
+
+# Include optical bands
+if include_optical == ['False']:
+    optical_string = 'no_optical'
+else:
+    optical_string = ''.join(include_optical)  
+    if type(include_optical) == list:
+        for key in include_optical:
+            bs[key] = sp.SpectralElement.from_file(f'input_files/bands/SLOAN_SDSS.{key}.dat')
+    elif type(include_optical) == str:
+        bs[include_optical] = sp.SpectralElement.from_file(f'input_files/bands/SLOAN_SDSS.{include_optical}.dat')
+     
+# dist = 40
+# distance = dist * u.Mpc
+# heating = 'beta'
+# model = 'kilonova_uvboost'
+# read_data = 'shock'
 time_data = 12
-method = 'pool'
-max_time = 100*60*60 # seconds, 'timeout' method
+# method = 'pool'
+# max_time = 100*60*60 # seconds, 'timeout' method
 
 
 
 ############ READ DATA ###################
-with open(f'input_files/SNR_fiducial_shock_40Mpc_opticalbands_ugri_uvbands_NUV_DD1D2_0h_delay.pkl','rb') as tf:
+with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_NUV_DD1D2_{delay}h_delay.pkl','rb') as tf:
     data_list = pickle.load(tf)
 ts_data, abmags_data, snrs, abmags_error = data_list
+# with open(f'input_files/SNR_fiducial_shock_40Mpc_opticalbands_ugri_uvbands_NUV_DD1D2_0h_delay.pkl','rb') as tf:
+    # data_list = pickle.load(tf)
+# ts_data, abmags_data, snrs, abmags_error = data_list
 
-t_data = ts_data['NUV_D']
-AB_mag_data=abmags_data['NUV_D']
-AB_error = abmags_error['NUV_D']
+# t_data = ts_data['NUV_D']
+# AB_mag_data=abmags_data['NUV_D']
+# AB_error = abmags_error['NUV_D']
 
 
 ########## LOG PROBABILITIES ##########
