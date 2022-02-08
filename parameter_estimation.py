@@ -8,7 +8,7 @@ from astropy import constants as c
 import pickle 
 import time
 import os
-from parameters import getParameters
+#from parameters import getParameters
 
 # get parameters
 #parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample','run_mode'])
@@ -242,22 +242,26 @@ elif method == 'timeout' or method == 'pool':
             with open(folderstring + f'/{filestring}_results', 'wb') as kilonova_results :
                 pickle.dump(sampler.results, kilonova_results)
         elif run_mode == 'external':
-            #if not path exists...
+            print('external sampler')
             if method == 'pool':
                 print('no external pool mode yet')
             if method == 'timeout':
                 print('initiating sampler...')
                 sampler_start = time.time()
                 sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample_method)
-                for it, res in enumerate(sampler.sample(dlogz=10000)):
-                    print(f'it: {it}, delta_logz: {res[-1]}')
-                    pass
-                sampler.results.summary()
-                
+                dlogzs = [12000,10000]
+                for dlogz in dlogzs:
+                    for it, res in enumerate(sampler.sample(dlogz=dlogz)):
+                        print(f'it: {it}, delta_logz: {res[-1]}')
+                    with open(folderstring+f'/{filestring}_sampler_dlogz={dlogz}','wb') as samplerfile :
+                        pickle.dump(sampler,samplerfile)
+                    print(f'saved sampler at dlogz = {dlogz}')
                 # Adding the final set of live points.
                 for it_final, res in enumerate(sampler.add_live_points()):
                     pass
-                sampler.results.summary()
+                with open(folderstring+f'/{filestring}_results_test','wb') as resultsfile :
+                    pickle.dump(sampler.results,resultsfile)
+                print('added live points')
     else:
         print(f'{filestring}_results already exists, skipping...')
     
