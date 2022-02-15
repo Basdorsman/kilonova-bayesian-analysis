@@ -43,7 +43,7 @@ def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransfor
         sampler = initiateSampler(loglikelihood, priortransform, ndim, parallel=parallel, sample=sample)
     return sampler
 
-def wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample='auto', intermediate_outputs=True, print_progress=True, parallel=True, dlogz_threshold=0.5):
+def wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample='auto', intermediate_outputs=True, save_after_seconds=60, print_progress=True, parallel=True, dlogz_threshold=0.5):
     if intermediate_outputs:
         previous_dlogz=False
         sample_start = time.time()
@@ -58,7 +58,7 @@ def wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, f
             sampler.M = pool.map
             for it, res in enumerate(sampler.sample(dlogz=dlogz_threshold)):
                 print(f'it: {it}, nc: {res[9]} ,delta_logz: {res[-1]}')
-                if int(np.ceil(time.time()-sample_start))>60:
+                if int(np.ceil(time.time()-sample_start))>save_after_seconds:
                     with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}','wb') as samplerfile :
                         pickle.dump(sampler,samplerfile)
                     with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}_rstate','wb') as rstatefile :
@@ -88,7 +88,7 @@ def wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, f
             sampler.run_nested(print_progress=print_progress,dlogz=dlogz_threshold)
         sampler_time = int(np.ceil(time.time()-sampler_start))
         print(f'sampling time was {sampler_time} seconds')
-    with open(folderstring+'/'+filestring+'_results_test','wb') as resultsfile :
+    with open(folderstring+'/'+filestring+'_results','wb') as resultsfile :
         pickle.dump(sampler.results,resultsfile)
     print('saved results')
     

@@ -7,37 +7,37 @@ from astropy import constants as c
 import dill as pickle 
 import os
 from dynesty_sampler import getSampler, wrappedSampler, find
-#from parameters import getParameters
+from parameters import getParameters
 
 # get parameters
-#parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','max_time','sample','intermediate_outputs','parallel'])
-parameters = {
-    'model' : 'kilonova_uvboost',
-    'delay' : 0,
-    'dist' : 40,
-    'include_optical' : 'False',
-    'print_progress' : 'True',
-    'method' : 'sample',
-    'max_time' : 360000,
-    'include_uv' : 'NUV_D',
-    'read_data' : 'shock',
-    'sample' : 'auto',
-    'intermediate_outputs' : 'True',
-    'parallel' : 'True',
-    'dlogz_threshold' : 5000
-    }
+parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','intermediate_outputs','sample','save_after_seconds','parallel','dlogz_threshold'])
+# parameters = {
+#     'model' : 'kilonova_uvboost',
+#     'delay' : 0,
+#     'dist' : 40,
+#     'include_optical' : 'False',
+#     'print_progress' : 'True',
+#     'method' : 'sample',
+#     'include_uv' : 'NUV_D',
+#     'read_data' : 'shock',
+#     'sample' : 'auto',
+#     'intermediate_outputs' : 'True',
+#     'save_after_seconds' : 1000,
+#     'parallel' : 'True',
+#     'dlogz_threshold' : 0.5
+#     }
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
 delay = parameters['delay'] #hours
 dist = parameters['dist'] #mpc
 include_optical = parameters['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
 print_progress=parameters['print_progress']=='True'
-method = parameters['method'] #'test', 'timeout', 'pool'
-max_time = int(parameters['max_time']) # seconds, parameter for 'timeout' method
+method = parameters['method'] #'test', 'sample'
 include_uv = parameters['include_uv'].split(',')
 read_data = parameters['read_data']
 sample_method = parameters['sample']
 intermediate_outputs = parameters['intermediate_outputs']=='True'
+save_after_seconds = int(parameters['save_after_seconds'])
 parallel = parameters['parallel']=='True'
 dlogz_threshold=int(parameters['dlogz_threshold'])
 
@@ -216,7 +216,7 @@ elif method == 'sample':
             sampler = getSampler(ndim, folderstring, filestring, parallel=parallel, sample=sample_method, intermediate_outputs=intermediate_outputs)
             priortransform=sampler.prior_transform.func
             loglikelihood=sampler.loglikelihood.func
-            wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample=sample_method, intermediate_outputs=intermediate_outputs, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
+            wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample=sample_method, intermediate_outputs=intermediate_outputs, save_after_seconds=save_after_seconds, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
         else:
             sampler = getSampler(ndim, folderstring, filestring, loglikelihood=loglikelihood, priortransform=priortransform, parallel=parallel, sample=sample_method, intermediate_outputs=intermediate_outputs)
             wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample=sample_method, intermediate_outputs=intermediate_outputs, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
