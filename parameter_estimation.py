@@ -6,7 +6,7 @@ import astropy.units as u
 from astropy import constants as c
 import dill as pickle 
 import os
-from dynesty_sampler import wrappedSampler
+from dynesty_sampler import getSampler, wrappedSampler, find
 #from parameters import getParameters
 
 # get parameters
@@ -23,7 +23,8 @@ parameters = {
     'read_data' : 'shock',
     'sample' : 'auto',
     'intermediate_outputs' : 'True',
-    'parallel' : 'True'
+    'parallel' : 'True',
+    'dlogz_threshold' : 5000
     }
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
@@ -38,6 +39,7 @@ read_data = parameters['read_data']
 sample_method = parameters['sample']
 intermediate_outputs = parameters['intermediate_outputs']=='True'
 parallel = parameters['parallel']=='True'
+dlogz_threshold=int(parameters['dlogz_threshold'])
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
@@ -102,55 +104,53 @@ elif model == 'shock':
     
 
 ########## DEFINE MODEL ##########
-
 lightcurve_object = Lightcurve(distance, heating_function=heating)
 
-if model == 'kilonova' or model == 'kilonova_uvboost':
+def lightcurve_model(t,theta_reshaped,bandpasses):
+    abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation)
+    return abmags
 
-    def priortransform(uniform): 
-        mass = (limits[0,1]-limits[0,0])*uniform[0]+limits[0,0]
-        #velocities = (limits[1:4,1]-limits[1:4,0])*uniform[1:4]+limits[1:4,0]
-        v_min = (limits[1,1]-limits[1,0])*uniform[1]+limits[1,0]
-        v_max = (limits[3,1]-limits[3,0])*uniform[2]+limits[3,0]
-        v_k = (v_max-v_min)*uniform[3]+v_min
-        #velocities = np.array([v_min, v_k, v_max])
-        opacities = (limits[4:6,1]-limits[4:6,0])*uniform[4:6]+limits[4:6,0]
-        n = (limits[6,1]-limits[6,0])*uniform[6]+limits[6,0]
-        theta = np.array([mass, v_min, v_k, v_max, opacities[0], opacities[1], n]) #for postprocessing
-        return theta
+folderstring = f'output_files/results/{model}model_{read_data}data_{delay}h_delay'
+filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band'
 
-    def lightcurve_model(t,theta_reshaped,bandpasses):
-        abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation)
-        return abmags
-
-    def loglikelihood(theta):
-        theta_reshaped = np.array((theta[0] * u.Msun, np.array((theta[1], theta[2], theta[3])) * c.c, np.array((theta[4], theta[5])) * u.cm**2 / u.g, theta[6]), dtype= 'object')
-        sigmas2 = {}
-        loglikelihood = {}
-        abmags_model = lightcurve_model(ts_data, theta_reshaped, bs)
-        for key in bs:
-            sigmas2[key] = abmags_error[key]**2
-            loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
-        return sum(loglikelihood.values())
+if not (intermediate_outputs == True and isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str)):
+    if model == 'kilonova' or model == 'kilonova_uvboost':
+        def priortransform(uniform): 
+            mass = (limits[0,1]-limits[0,0])*uniform[0]+limits[0,0]
+            #velocities = (limits[1:4,1]-limits[1:4,0])*uniform[1:4]+limits[1:4,0]
+            v_min = (limits[1,1]-limits[1,0])*uniform[1]+limits[1,0]
+            v_max = (limits[3,1]-limits[3,0])*uniform[2]+limits[3,0]
+            v_k = (v_max-v_min)*uniform[3]+v_min
+            #velocities = np.array([v_min, v_k, v_max])
+            opacities = (limits[4:6,1]-limits[4:6,0])*uniform[4:6]+limits[4:6,0]
+            n = (limits[6,1]-limits[6,0])*uniform[6]+limits[6,0]
+            theta = np.array([mass, v_min, v_k, v_max, opacities[0], opacities[1], n]) #for postprocessing
+            return theta
     
-elif model == 'shock':
-
-    def priortransform(u):
-        theta = (limits[:,1]-limits[:,0])*u+limits[:,0]
-        return theta
+        def loglikelihood(theta):
+            theta_reshaped = np.array((theta[0] * u.Msun, np.array((theta[1], theta[2], theta[3])) * c.c, np.array((theta[4], theta[5])) * u.cm**2 / u.g, theta[6]), dtype= 'object')
+            sigmas2 = {}
+            loglikelihood = {}
+            abmags_model = lightcurve_model(ts_data, theta_reshaped, bs)
+            for key in bs:
+                sigmas2[key] = abmags_error[key]**2
+                loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
+            return sum(loglikelihood.values())
+        
+    elif model == 'shock':
     
-    def lightcurve_model(t, theta, bandpasses):
-        abmags = lightcurve_object.calc_abmags_combined(t,theta,bandpasses,radiation=radiation)
-        return abmags
-    
-    def loglikelihood(theta):
-        sigmas2 = {}
-        loglikelihood = {}
-        abmags_model = lightcurve_model(ts_data, theta, bs)
-        for key in bs:
-            sigmas2[key] = abmags_error[key]**2
-            loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
-        return sum(loglikelihood.values())
+        def priortransform(u):
+            theta = (limits[:,1]-limits[:,0])*u+limits[:,0]
+            return theta
+        
+        def loglikelihood(theta):
+            sigmas2 = {}
+            loglikelihood = {}
+            abmags_model = lightcurve_model(ts_data, theta, bs)
+            for key in bs:
+                sigmas2[key] = abmags_error[key]**2
+                loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
+            return sum(loglikelihood.values())
 
 ####### TESTS / PARAMETER ESTIMATION #############
 if method == 'test':
@@ -200,20 +200,26 @@ if method == 'test':
 
     ########## NESTED SAMPLER #########
 elif method == 'sample':
-    folderstring = f'output_files/results/{model}model_{read_data}data_{delay}h_delay'
     try:
         os.mkdir(folderstring)
         print(f'Created directory: {folderstring}')
     except:
         print(f'Directory already exists: {folderstring}')
-
-    filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band'
     if not os.path.exists(folderstring+f'/{filestring}_results'):
         with open(folderstring+f'/{filestring}_priorlims','wb') as prior_limits :
             pickle.dump(limits, prior_limits)
         with open(folderstring+f'/{filestring}_parameters','wb') as input_parameters :
             pickle.dump(parameters,input_parameters)
-        wrappedSampler(loglikelihood, priortransform, ndim, folderstring, filestring, sample=sample_method, intermediate_outputs=intermediate_outputs, print_progress=print_progress, parallel=parallel)
+        try:
+            priortransform
+        except NameError:
+            sampler = getSampler(ndim, folderstring, filestring, parallel=parallel, sample=sample_method, intermediate_outputs=intermediate_outputs)
+            priortransform=sampler.prior_transform.func
+            loglikelihood=sampler.loglikelihood.func
+            wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample=sample_method, intermediate_outputs=intermediate_outputs, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
+        else:
+            sampler = getSampler(ndim, folderstring, filestring, loglikelihood=loglikelihood, priortransform=priortransform, parallel=parallel, sample=sample_method, intermediate_outputs=intermediate_outputs)
+            wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample=sample_method, intermediate_outputs=intermediate_outputs, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
     else:
         print(f'{filestring}_results already exists, skipping...')
         

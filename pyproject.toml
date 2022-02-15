@@ -23,6 +23,7 @@ dill = "^0.3.4"
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 spyder-kernels = "^2.2.0"
+ipdb = "^0.13.9"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

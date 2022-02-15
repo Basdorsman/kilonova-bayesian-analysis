@@ -1,4 +1,4 @@
-from dynesty import NestedSampler
+from dynesty.dynesty import NestedSampler
 import dill as pickle
 import time
 import numpy as np
@@ -11,8 +11,12 @@ def find(pattern, path):
         for name in files:
             if fnmatch.fnmatch(name, pattern):
                 result.append(os.path.join(root, name))
-    return min(result)
-
+    try:
+        lowest_result = min(result)
+        return lowest_result
+    except:
+        return []
+        
 def initiateSampler(loglikelihood, priortransform, ndim, parallel=True, sample='auto'):
     if parallel:
         print('initiating multipool sampler')
@@ -24,24 +28,22 @@ def initiateSampler(loglikelihood, priortransform, ndim, parallel=True, sample='
         sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample)
     return sampler
 
-def getSampler(loglikelihood, priortransform, ndim, folderstring, filestring, parallel=True, sample='auto', intermediate_outputs=True):
+def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransform=None, parallel=True, sample='auto', intermediate_outputs=True):
     if intermediate_outputs:
-        try:
+        if isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str):
             intermediate_output = find(filestring+'_sampler_dlogz=*', folderstring)
             print('opened file: '+intermediate_output)
             with open(intermediate_output,'rb') as samplerfile:
                 sampler = pickle.load(samplerfile)
             with open(intermediate_output+'_rstate','rb') as rstatefile:
                 sampler.rstate = pickle.load(rstatefile)
-        except ValueError:
+        else:
             sampler = initiateSampler(loglikelihood, priortransform, ndim, parallel=parallel, sample=sample)
     else:
         sampler = initiateSampler(loglikelihood, priortransform, ndim, parallel=parallel, sample=sample)
     return sampler
 
-def wrappedSampler(loglikelihood, priortransform, ndim, folderstring, filestring, sample='auto', intermediate_outputs=True, print_progress=True, parallel=True):
-    sampler = getSampler(loglikelihood, priortransform, ndim, folderstring, filestring, parallel=parallel, sample=sample, intermediate_outputs=intermediate_outputs)
-    dlogz_threshold = 5000
+def wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample='auto', intermediate_outputs=True, print_progress=True, parallel=True, dlogz_threshold=0.5):
     if intermediate_outputs:
         previous_dlogz=False
         sample_start = time.time()
@@ -89,3 +91,12 @@ def wrappedSampler(loglikelihood, priortransform, ndim, folderstring, filestring
     with open(folderstring+'/'+filestring+'_results_test','wb') as resultsfile :
         pickle.dump(sampler.results,resultsfile)
     print('saved results')
+    
+    
+if __name__ == '__main__':
+    filestring = '40Mpc_no_opticalband_NUV_Dband'
+    folderstring = 'output_files/results/kilonova_uvboostmodel_shockdata_0h_delay'
+    intermediate_output = find(filestring+'_sampler_dlogz=*', folderstring)
+    print('opened file: '+intermediate_output)
+    with open(intermediate_output,'rb') as samplerfile:
+        sampler = pickle.load(samplerfile)
