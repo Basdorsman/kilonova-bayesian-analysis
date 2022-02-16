@@ -28,9 +28,8 @@ def initiateSampler(loglikelihood, priortransform, ndim, parallel=True, sample='
         sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample)
     return sampler
 
-def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransform=None, parallel=True, sample='auto', intermediate_outputs=True):
-    sampler_reloaded=False
-    if intermediate_outputs:
+def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransform=None, parallel=True, sample='auto', resume_previous=True):
+    if resume_previous:
         if isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str):
             intermediate_output = find(filestring+'_sampler_dlogz=*', folderstring)
             print('opened file: '+intermediate_output)
@@ -38,63 +37,59 @@ def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransfor
                 sampler = pickle.load(samplerfile)
             with open(intermediate_output+'_rstate','rb') as rstatefile:
                 sampler.rstate = pickle.load(rstatefile)
-            sampler_reloaded=True
             previous_dlogz=intermediate_output.split('=')[1]
         else:
             sampler = initiateSampler(loglikelihood, priortransform, ndim, parallel=parallel, sample=sample)
+            previous_dlogz=False
     else:
         sampler = initiateSampler(loglikelihood, priortransform, ndim, parallel=parallel, sample=sample)
+        previous_dlogz=False
     return sampler, previous_dlogz
 
-def wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, previous_dlogz=False, sample='auto', intermediate_outputs=True, save_after_seconds=60, print_progress=True, parallel=True, dlogz_threshold=0.5):
-    if intermediate_outputs:
-        sample_start = time.time()
-        with MultiPool() as pool:
-            sampler.pool = pool
-            sampler.queue_size = pool.size
-            sampler.use_pool = {}
-            sampler.use_pool_evolve = True
-            sampler.use_pool_logl = True
-            sampler.use_pool_ptform = True
-            sampler.use_pool_update = True
-            sampler.M = pool.map
-            for it, res in enumerate(sampler.sample(dlogz=dlogz_threshold)):
-                print(f'it: {it}, nc: {res[9]} ,delta_logz: {res[-1]}')
-                if int(np.ceil(time.time()-sample_start))>save_after_seconds:
-                    with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}','wb') as samplerfile :
-                        pickle.dump(sampler,samplerfile)
-                    with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}_rstate','wb') as rstatefile :
-                        pickle.dump(sampler.rstate,rstatefile)
-                    print(f'saved sampler at dlogz = {res[-1]}')
-                    if previous_dlogz:
-                        os.remove(folderstring+'/'+filestring+f'_sampler_dlogz={previous_dlogz}')
-                        os.remove(folderstring+'/'+filestring+f'_sampler_dlogz={previous_dlogz}_rstate')
-                        print(f'removed old sampler at dlogz = {previous_dlogz}')
-                    previous_dlogz=res[-1]
-                    sample_start = time.time()
-            for it_final, res in enumerate(sampler.add_live_points()):
-                pass
-            print('added live points')
-    elif intermediate_outputs==False:    
-        print('internal sampler')
-        sampler_start = time.time()
-        with MultiPool() as pool:
-            sampler.pool = pool
-            sampler.queue_size = pool.size
-            sampler.use_pool = {}
-            sampler.use_pool_evolve = True
-            sampler.use_pool_logl = True
-            sampler.use_pool_ptform = True
-            sampler.use_pool_update = True
-            sampler.M = pool.map
-            sampler.run_nested(print_progress=print_progress,dlogz=dlogz_threshold)
-        sampler_time = int(np.ceil(time.time()-sampler_start))
-        print(f'sampling time was {sampler_time} seconds')
-    with open(folderstring+'/'+filestring+'_results','wb') as resultsfile :
-        pickle.dump(sampler.results,resultsfile)
+def externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=False, sample='auto', save_after_seconds=60, print_progress=True, dlogz_threshold=0.5):
+    sample_start = time.time()
+    print('sampler running...')
+    for it, res in enumerate(sampler.sample(dlogz=dlogz_threshold)):
+        if print_progress:
+            print(f'it: {it}, nc: {res[9]} ,delta_logz: {res[-1]}')
+        if int(np.ceil(time.time()-sample_start))>save_after_seconds:
+            with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}','wb') as samplerfile :
+                pickle.dump(sampler,samplerfile)
+            with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}_rstate','wb') as rstatefile :
+                pickle.dump(sampler.rstate,rstatefile)
+            if print_progress:
+                print(f'saved sampler at dlogz = {res[-1]}')
+            if previous_dlogz:
+                os.remove(folderstring+'/'+filestring+f'_sampler_dlogz={previous_dlogz}')
+                os.remove(folderstring+'/'+filestring+f'_sampler_dlogz={previous_dlogz}_rstate')
+                if print_progress:
+                    print(f'removed old sampler at dlogz = {previous_dlogz}')
+            previous_dlogz=res[-1]
+            sample_start = time.time()
+    for it_final, res in enumerate(sampler.add_live_points()):
+        pass
+    print('added live points')
+    with open(folderstring+'/'+filestring+'_results_test','wb') as samplerfile :
+        pickle.dump(sampler,samplerfile)
     print('saved results')
-    
-    
+
+def wrappedSampler(sampler, folderstring, filestring, previous_dlogz=False, sample='auto', save_after_seconds=60, print_progress=True, parallel=True, dlogz_threshold=0.5):
+    if parallel:
+        with MultiPool() as pool:
+            sampler.pool = pool
+            sampler.queue_size = pool.size
+            sampler.use_pool = {}
+            sampler.use_pool_evolve = True
+            sampler.use_pool_logl = True
+            sampler.use_pool_ptform = True
+            sampler.use_pool_update = True
+            sampler.M = pool.map
+            externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=previous_dlogz, sample=sample, save_after_seconds=save_after_seconds, print_progress=print_progress,dlogz_threshold=dlogz_threshold)
+    else:
+        externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=previous_dlogz, sample=sample, save_after_seconds=save_after_seconds, print_progress=print_progress,dlogz_threshold=dlogz_threshold)
+
+        
+        
 if __name__ == '__main__':
     filestring = '40Mpc_no_opticalband_NUV_Dband'
     folderstring = 'output_files/results/kilonova_uvboostmodel_shockdata_0h_delay'
