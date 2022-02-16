@@ -39,7 +39,7 @@ sample_method = parameters['sample']
 intermediate_outputs = parameters['intermediate_outputs']=='True'
 save_after_seconds = int(parameters['save_after_seconds'])
 parallel = parameters['parallel']=='True'
-dlogz_threshold=int(parameters['dlogz_threshold'])
+dlogz_threshold=float(parameters['dlogz_threshold'])
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
 distance = dist * u.Mpc
@@ -213,13 +213,12 @@ elif method == 'sample':
         try:
             priortransform
         except NameError:
-            sampler = getSampler(ndim, folderstring, filestring, parallel=parallel, sample=sample_method, intermediate_outputs=intermediate_outputs)
+            sampler, previous_dlogz = getSampler(ndim, folderstring, filestring, parallel=parallel, sample=sample_method, intermediate_outputs=intermediate_outputs)
             priortransform=sampler.prior_transform.func
             loglikelihood=sampler.loglikelihood.func
-            wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample=sample_method, intermediate_outputs=intermediate_outputs, save_after_seconds=save_after_seconds, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
+            wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, previous_dlogz=previous_dlogz, sample=sample_method, intermediate_outputs=intermediate_outputs, save_after_seconds=save_after_seconds, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
         else:
-            sampler = getSampler(ndim, folderstring, filestring, loglikelihood=loglikelihood, priortransform=priortransform, parallel=parallel, sample=sample_method, intermediate_outputs=intermediate_outputs)
-            wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample=sample_method, intermediate_outputs=intermediate_outputs, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
+            wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, previous_dlogz=previous_dlogz, sample=sample_method, intermediate_outputs=intermediate_outputs, print_progress=print_progress, parallel=parallel, dlogz_threshold=dlogz_threshold)
     else:
         print(f'{filestring}_results already exists, skipping...')
         

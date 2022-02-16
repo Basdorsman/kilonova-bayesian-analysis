@@ -29,6 +29,7 @@ def initiateSampler(loglikelihood, priortransform, ndim, parallel=True, sample='
     return sampler
 
 def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransform=None, parallel=True, sample='auto', intermediate_outputs=True):
+    sampler_reloaded=False
     if intermediate_outputs:
         if isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str):
             intermediate_output = find(filestring+'_sampler_dlogz=*', folderstring)
@@ -37,15 +38,16 @@ def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransfor
                 sampler = pickle.load(samplerfile)
             with open(intermediate_output+'_rstate','rb') as rstatefile:
                 sampler.rstate = pickle.load(rstatefile)
+            sampler_reloaded=True
+            previous_dlogz=intermediate_output.split('=')[1]
         else:
             sampler = initiateSampler(loglikelihood, priortransform, ndim, parallel=parallel, sample=sample)
     else:
         sampler = initiateSampler(loglikelihood, priortransform, ndim, parallel=parallel, sample=sample)
-    return sampler
+    return sampler, previous_dlogz
 
-def wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, sample='auto', intermediate_outputs=True, save_after_seconds=60, print_progress=True, parallel=True, dlogz_threshold=0.5):
+def wrappedSampler(sampler, loglikelihood, priortransform, ndim, folderstring, filestring, previous_dlogz=False, sample='auto', intermediate_outputs=True, save_after_seconds=60, print_progress=True, parallel=True, dlogz_threshold=0.5):
     if intermediate_outputs:
-        previous_dlogz=False
         sample_start = time.time()
         with MultiPool() as pool:
             sampler.pool = pool
