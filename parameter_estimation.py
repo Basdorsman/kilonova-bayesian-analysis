@@ -7,25 +7,25 @@ from astropy import constants as c
 import dill as pickle 
 import os
 from dynesty_sampler import getSampler, wrappedSampler, find
-# from parameters import getParameters
+from parameters import getParameters
 
-# # get parameters
-# parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','resume_previous','sample','save_after_seconds','parallel','dlogz_threshold'])
-parameters = {
-    'model' : 'kilonova_uvboost',
-    'delay' : 0,
-    'dist' : 40,
-    'include_optical' : 'False',
-    'print_progress' : 'True',
-    'method' : 'sample',
-    'include_uv' : 'NUV_D',
-    'read_data' : 'shock',
-    'sample' : 'auto',
-    'resume_previous' : 'True',
-    'save_after_seconds' : 1000, #float/int or will resort to False
-    'parallel' : 'True',
-    'dlogz_threshold' : 0.5
-    }
+# get parameters
+parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','resume_previous','sample','save_after_seconds','parallel','dlogz_threshold'])
+# parameters = {
+#     'model' : 'kilonova_uvboost',
+#     'delay' : 0,
+#     'dist' : 40,
+#     'include_optical' : 'False',
+#     'print_progress' : 'True',
+#     'method' : 'sample',
+#     'include_uv' : 'NUV_D',
+#     'read_data' : 'shock',
+#     'sample' : 'auto',
+#     'resume_previous' : 'False',
+#     'save_after_seconds' : 600, #float/int or will resort to False
+#     'parallel' : 'True',
+#     'dlogz_threshold' : 10000
+#     }
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
 delay = parameters['delay'] #hours
@@ -40,7 +40,7 @@ resume_previous = parameters['resume_previous']=='True'
 try:
     save_after_seconds = int(parameters['save_after_seconds'])
 except:
-    save_after_seconds=False
+    save_after_seconds = False
 parallel = parameters['parallel']=='True'
 dlogz_threshold=float(parameters['dlogz_threshold'])
 
@@ -207,7 +207,7 @@ elif method == 'sample':
         os.mkdir(folderstring)
         print(f'Created directory: {folderstring}')
     except:
-        print(f'Directory already exists: {folderstring}')
+        print(f'Opened directory: {folderstring}')
     if not os.path.exists(folderstring+f'/{filestring}_results'):
         with open(folderstring+f'/{filestring}_priorlims','wb') as prior_limits :
             pickle.dump(limits, prior_limits)

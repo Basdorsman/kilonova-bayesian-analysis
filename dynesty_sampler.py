@@ -19,12 +19,12 @@ def find(pattern, path):
         
 def initiateSampler(loglikelihood, priortransform, ndim, parallel=True, sample='auto'):
     if parallel:
-        print('initiating multipool sampler')
+        print('Initiating new multipool sampler')
         with MultiPool() as pool:
             sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool, sample=sample)
             print('poolsize = ',pool.size)
-    elif parallel==False:
-        print('initiating sampler')
+    else:
+        print('Initiating new sampler')
         sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample)
     return sampler
 
@@ -32,7 +32,7 @@ def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransfor
     if resume_previous:
         if isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str):
             intermediate_output = find(filestring+'_sampler_dlogz=*', folderstring)
-            print('opened file: '+intermediate_output)
+            print('Using previous sampler: '+intermediate_output)
             with open(intermediate_output,'rb') as samplerfile:
                 sampler = pickle.load(samplerfile)
             with open(intermediate_output+'_rstate','rb') as rstatefile:
@@ -46,26 +46,27 @@ def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransfor
         previous_dlogz=False
     return sampler, previous_dlogz
 
-def externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=False, sample='auto', save_after_seconds=60, print_progress=True, dlogz_threshold=0.5):
+def externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=False, sample='auto', save_after_seconds=600, print_progress=True, dlogz_threshold=0.5):
     sample_start = time.time()
     print('sampler running...')
     for it, res in enumerate(sampler.sample(dlogz=dlogz_threshold)):
         if print_progress:
             print(f'it: {it}, nc: {res[9]} ,delta_logz: {res[-1]}')
-        if int(np.ceil(time.time()-sample_start))>save_after_seconds:
-            with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}','wb') as samplerfile :
-                pickle.dump(sampler,samplerfile)
-            with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}_rstate','wb') as rstatefile :
-                pickle.dump(sampler.rstate,rstatefile)
-            if print_progress:
-                print(f'saved sampler at dlogz = {res[-1]}')
-            if previous_dlogz:
-                os.remove(folderstring+'/'+filestring+f'_sampler_dlogz={previous_dlogz}')
-                os.remove(folderstring+'/'+filestring+f'_sampler_dlogz={previous_dlogz}_rstate')
+        if save_after_seconds:
+            if int(np.ceil(time.time()-sample_start))>save_after_seconds:
+                with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}','wb') as samplerfile :
+                    pickle.dump(sampler,samplerfile)
+                with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}_rstate','wb') as rstatefile :
+                    pickle.dump(sampler.rstate,rstatefile)
                 if print_progress:
-                    print(f'removed old sampler at dlogz = {previous_dlogz}')
-            previous_dlogz=res[-1]
-            sample_start = time.time()
+                    print(f'saved sampler at dlogz = {res[-1]}')
+                if previous_dlogz:
+                    os.remove(folderstring+'/'+filestring+f'_sampler_dlogz={previous_dlogz}')
+                    os.remove(folderstring+'/'+filestring+f'_sampler_dlogz={previous_dlogz}_rstate')
+                    if print_progress:
+                        print(f'removed old sampler at dlogz = {previous_dlogz}')
+                previous_dlogz=res[-1]
+                sample_start = time.time()
     for it_final, res in enumerate(sampler.add_live_points()):
         pass
     print('added live points')
