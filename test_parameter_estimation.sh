@@ -7,10 +7,10 @@ print_progress=True
 include_optical=False
 include_uv=NUV_D
 sample=auto
-resume_previous=False
-save_after_seconds=1000
+resume_previous=True
+save_after_seconds=1200
 parallel=True
-dlogz_threshold=10000
+dlogz_threshold=0.5
 export read_data model method dist delay print_progress include_optical include_uv sample resume_previous save_after_seconds parallel dlogz_threshold
 
 poetry run python parameter_estimation.py
