@@ -77,6 +77,7 @@ def externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=False
 def wrappedSampler(sampler, folderstring, filestring, previous_dlogz=False, sample='auto', save_after_seconds=60, print_progress=True, parallel=True, dlogz_threshold=0.5):
     if parallel:
         with MultiPool() as pool:
+            print('poolsize = ',pool.size)
             sampler.pool = pool
             sampler.queue_size = pool.size
             sampler.use_pool = {}
