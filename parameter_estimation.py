@@ -32,7 +32,7 @@ delay = parameters['delay'] #hours
 dist = parameters['dist'] #mpc
 include_optical = parameters['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
 print_progress=parameters['print_progress']=='True'
-method = parameters['method'] #'test', 'sample'
+method = parameters['method'] #'plot', 'sample'
 include_uv = parameters['include_uv'].split(',')
 read_data = parameters['read_data']
 sample = parameters['sample']
@@ -41,7 +41,10 @@ try:
     save_after_seconds = int(parameters['save_after_seconds'])
 except:
     save_after_seconds = False
-parallel = parameters['parallel']=='True'
+try:
+    parallel = int(parameters['parallel'])
+except:
+    parallel = False
 dlogz_threshold=float(parameters['dlogz_threshold'])
 
 ######## MORE PARAMETERS, DONT TOUCH ##########
@@ -156,7 +159,7 @@ if not (resume_previous == True and isinstance(find(filestring+'_sampler_dlogz=*
             return sum(loglikelihood.values())
 
 ####### TESTS / PARAMETER ESTIMATION #############
-if method == 'test':
+if method == 'plot':
     print(f'testing...{model} model, {read_data} data')
     import timeit
     if model == 'kilonova' or model == 'kilonova_uvboost':
@@ -197,7 +200,12 @@ if method == 'test':
     for key in bs:
         ax.plot(ts_data[key].to_value('day'),abmags_data[key],'x')
         ax.plot(ts_data[key].to_value('day'),abmags_model[key])
-    print_string = f'output_files/plots/test_{model}model_{read_data}data_{delay}h_delay_{dist}Mpc_{optical_string}band_{uv_string}band.png'    
+    try:    
+        os.mkdir('./output_files/plots')
+        print('created folder for plots')
+    except:
+        print('folder for plots exists')
+    print_string = f'./output_files/plots/test_{model}model_{read_data}data_{delay}h_delay_{dist}Mpc_{optical_string}band_{uv_string}band.png'    
     fig.savefig(print_string)
     print(f'saved in {print_string}')
 

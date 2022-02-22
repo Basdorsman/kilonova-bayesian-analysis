@@ -20,7 +20,7 @@ def find(pattern, path):
 def initiateSampler(loglikelihood, priortransform, ndim, parallel=True, sample='auto'):
     if parallel:
         print('Initiating new multipool sampler')
-        with MultiPool() as pool:
+        with MultiPool(processes=parallel) as pool:
             sampler = NestedSampler(loglikelihood, priortransform, ndim, pool=pool, sample=sample)
             print('poolsize = ',pool.size)
     else:
@@ -76,7 +76,7 @@ def externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=False
 
 def wrappedSampler(sampler, folderstring, filestring, previous_dlogz=False, sample='auto', save_after_seconds=60, print_progress=True, parallel=True, dlogz_threshold=0.5):
     if parallel:
-        with MultiPool() as pool:
+        with MultiPool(processes=parallel) as pool:
             print('poolsize = ',pool.size)
             sampler.pool = pool
             sampler.queue_size = pool.size
@@ -90,7 +90,7 @@ def wrappedSampler(sampler, folderstring, filestring, previous_dlogz=False, samp
     else:
         externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=previous_dlogz, sample=sample, save_after_seconds=save_after_seconds, print_progress=print_progress,dlogz_threshold=dlogz_threshold)
 
-        
+
         
 if __name__ == '__main__':
     filestring = '40Mpc_no_opticalband_NUV_Dband'
