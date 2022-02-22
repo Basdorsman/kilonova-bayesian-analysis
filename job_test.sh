@@ -23,7 +23,7 @@ cp -r /home/$USER/$project $work_folder
 # Go to output folder
 cd $work_folder/$project
 
-# Run job
+# Set up environment
 module purge
 module load anaconda3/2021-05
 #module load openmpi/3.1.6
@@ -33,8 +33,7 @@ module load anaconda3/2021-05
 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
 source $HOME/.poetry/env
 
-
-#srun -n $SLURM_NTASKS --mpi=pmix_v2 
+# Run Job
 sh test_parameter_estimation.sh
 
 
