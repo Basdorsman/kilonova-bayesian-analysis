@@ -54,6 +54,7 @@ def externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=False
             print(f'it: {it}, nc: {res[9]} ,delta_logz: {res[-1]}')
         if save_after_seconds:
             if int(np.ceil(time.time()-sample_start))>save_after_seconds:
+                print('saving data...')
                 with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}','wb') as samplerfile :
                     pickle.dump(sampler,samplerfile)
                 with open(folderstring+'/'+filestring+f'_sampler_dlogz={res[-1]}_rstate','wb') as rstatefile :
@@ -86,6 +87,7 @@ def wrappedSampler(sampler, folderstring, filestring, previous_dlogz=False, samp
             sampler.use_pool_ptform = True
             sampler.use_pool_update = True
             sampler.M = pool.map
+            #sampler.run_nested()
             externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=previous_dlogz, sample=sample, save_after_seconds=save_after_seconds, print_progress=print_progress,dlogz_threshold=dlogz_threshold)
     else:
         externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=previous_dlogz, sample=sample, save_after_seconds=save_after_seconds, print_progress=print_progress,dlogz_threshold=dlogz_threshold)
