@@ -9,21 +9,25 @@ method='sample' #test, sample
 delay=0
 print_progress=0 #'0'=False
 sample='auto'
-include_optical='False'
-include_uv='NUV_D'
-parallel=2
+#include_optical='r'
+#include_uv='NUV_D'
+parallel=10
 resume_previous='True'
 save_after_seconds='False'
 dlogz_threshold=0.5
-read_data='shock'
+dist=40
+
 
 # parallel arguments
-# include_uv='include_uv=D1 include_uv=D1,D2' #"include_uv=D1 include_uv=D1,D2"
+include_optical='include_optical=r include_optical=False'
+include_uv='include_uv=NUV_D include_uv=NUV_D,D2' #"include_uv=D1 include_uv=D1,D2"
 # read_data='read_data=shock read_data=kilonova read_data=kilonova_uvboost read_data=kilonova read_data=kilonova_uvboost' #"read_data=shock read_data=kilonova read_data=kilonova_uvboost"
-# model='model=shock model=shock model=shock model=kilonova model=kilonova_uvboost' 
+read_data='read_data=kilonova read_data=kilonova_uvboost'
 model='model=kilonova model=kilonova_uvboost'
+# model='model=shock model=shock model=shock model=kilonova model=kilonova_uvboost' 
+# model='model=kilonova model=kilonova_uvboost'
 # dist='dist=40 dist=100 dist=160'
-dist='dist=100 dist=160'
+# dist='dist=100 dist=160'
 
 
 
@@ -37,7 +41,7 @@ export read_data model method dist delay print_progress include_optical include_
 #parallel poetry run python ./produce-data/produce-data.py ::: $read_data ::: $dist # produce necessary data (perhaps not necessary)
 
 # dry run (flag: --dry-run)
-parallel --dry-run poetry run python parameter_estimation.py ::: $model ::: $dist
+parallel --dry-run poetry run python parameter_estimation.py ::: $model :::+ $read_data ::: $include_optical :::+ $include_uv
 
 # run (useful flag: --progress)
-parallel --progress poetry run python parameter_estimation.py ::: $model ::: $dist
+parallel --progress poetry run python parameter_estimation.py ::: $model :::+ $read_data ::: $include_optical :::+ $include_uv

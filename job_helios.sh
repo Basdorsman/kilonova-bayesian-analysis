@@ -4,27 +4,27 @@
 #SBATCH --error=/home/bdorsma/my_outputs/test_lightcurve_plot_%j.err
 #SBATCH -N 1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=40
+#SBATCH --cpus-per-task=126
 #SBATCH --mem=100gb
 #SBATCH -t 6-0:00:00
 #SBATCH --partition=neutron-star
 #SBATCH --nodelist=helios-cn[030]
 
 # Create work folder
-mkdir -p /hddstore/$USER
+#mkdir -p /hddstore/$USER
 #export work_folder=$(mktemp -d -p /hddstore/$USER)
-export work_folder=/hddstore/$USER/workfolder
-mkdir -p $work_folder
+#export work_folder=/hddstore/$USER/workfolder
+#mkdir -p $work_folder
 
-echo $work_folder $SLURMD_NODENAME
+#echo $work_folder $SLURMD_NODENAME
 
 # Copy files over to work folder
-project=kilonova_bayesian_analysis
-echo "copying files.."
-cp -r /home/$USER/$project $work_folder
+#project=kilonova_bayesian_analysis
+#echo "copying files.."
+#cp -r /home/$USER/$project $work_folder
 
 # Go to output folder
-cd $work_folder/$project
+#cd $work_folder/$project
 
 # Set up environment
 module purge
@@ -37,7 +37,7 @@ module load anaconda3/2021-05
 source $HOME/.poetry/env
 
 # Run Job
-sh single_parameter_estimation.sh
+sh parallel_parameter_estimation.sh
 
 
 # Copy results
