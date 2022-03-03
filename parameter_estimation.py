@@ -216,7 +216,8 @@ elif method == 'sample':
         print(f'Created directory: {folderstring}')
     except:
         print(f'Opened directory: {folderstring}')
-    if not os.path.exists(folderstring+f'/{filestring}_results'):
+    #if not os.path.exists(folderstring+f'/{filestring}_results'):
+    if not isinstance(find(filestring+'_results_dlogz=*', folderstring), str):
         with open(folderstring+f'/{filestring}_priorlims','wb') as prior_limits :
             pickle.dump(limits, prior_limits)
         with open(folderstring+f'/{filestring}_parameters','wb') as input_parameters :

@@ -37,7 +37,7 @@ module load anaconda3/2021-05
 source $HOME/.poetry/env
 
 # Run Job
-sh test_parameter_estimation.sh
+sh single_parameter_estimation.sh
 
 
 # Copy results

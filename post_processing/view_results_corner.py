@@ -1,5 +1,5 @@
 import corner
-import pickle
+import dill as pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
@@ -132,28 +132,28 @@ def get_samples(models, datas, delays, distances, opticalbands, uvbands):
         if isinstance(variablesList,list):
             files = []
             legend_texts = variablesList
-            colors = 'rgb'[:len(variablesList)]
+            colors = ['blue','gold','red'][:len(variablesList)]
             for variable in variablesList:
                 variablesForString[variableCount] = variable
                 model, data, delay, distance, opticalband, uvband = variablesForString
-                files.append(f'results/{model}model_{data}data_{delay}_delay/{distance}Mpc_{opticalband}band_{uvband}band_results')
+                files.append(f'../output_files/results/{model}model_{data}data_{delay}_delay/{distance}Mpc_{opticalband}band_{uvband}band_results_dlogz=False')
         variableCount += 1
     samples = []
     for file in files:
         with open(file,'rb') as analysis_results:
-            samples.append(pickle.load(analysis_results).samples)
+            samples.append(pickle.load(analysis_results).results.samples)
     return(samples,legend_texts,colors)
 
 
-model = 'shock' # kilonova, kilonova_uvboost, shock
-datas = ['shock','kilonova']
+model = 'kilonova_uvboost' # kilonova, kilonova_uvboost, shock
+datas = 'kilonova_uvboost'
 delay = '0h'
-distance = '40'
+distance = ['160','100','40']
 opticalband = 'no_optical'
-uvband= 'D1'
-
+uvband= 'NUV_D'
 samples,legend_texts,colors = get_samples(model,datas,delay,distance,opticalband,uvband)
+legend_texts = ['160 Mpc','100 Mpc','40 Mpc']
 figure = cornerplot(model, samples, legend_texts, colors)
 
 plt.show()
-#figure.savefig('plots/test.png',dpi=300,pad_inches=0.3,bbox_inches='tight')
+figure.savefig(f'plots/cornerplot_{model}.png',dpi=300,pad_inches=0.3,bbox_inches='tight')

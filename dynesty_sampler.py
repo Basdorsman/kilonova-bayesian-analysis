@@ -15,9 +15,9 @@ def find(pattern, path):
         lowest_result = min(result)
         return lowest_result
     except:
-        return []
+        return result
         
-def initiateSampler(loglikelihood, priortransform, ndim, parallel=True, sample='auto'):
+def initiateSampler(loglikelihood, priortransform, ndim, parallel=False, sample='auto'):
     if parallel:
         print('Initiating new multipool sampler')
         with MultiPool(processes=parallel) as pool:
@@ -28,7 +28,7 @@ def initiateSampler(loglikelihood, priortransform, ndim, parallel=True, sample='
         sampler = NestedSampler(loglikelihood, priortransform, ndim, sample=sample)
     return sampler
 
-def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransform=None, parallel=True, sample='auto', resume_previous=True):
+def getSampler(ndim, folderstring, filestring, loglikelihood=None, priortransform=None, parallel=False, sample='auto', resume_previous=True):
     if resume_previous:
         if isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str):
             intermediate_output = find(filestring+'_sampler_dlogz=*', folderstring)
@@ -71,11 +71,12 @@ def externalSamplingLoop(sampler, folderstring, filestring, previous_dlogz=False
     for it_final, res in enumerate(sampler.add_live_points()):
         pass
     print('added live points')
-    with open(folderstring+'/'+filestring+'_results_test','wb') as samplerfile :
+    resultsstring=folderstring+'/'+filestring+f'_results_dlogz={previous_dlogz}'
+    with open(resultsstring,'wb') as samplerfile :
         pickle.dump(sampler,samplerfile)
-    print('saved results')
+    print(f'saved results: {resultsstring}')
 
-def wrappedSampler(sampler, folderstring, filestring, previous_dlogz=False, sample='auto', save_after_seconds=60, print_progress=True, parallel=True, dlogz_threshold=0.5):
+def wrappedSampler(sampler, folderstring, filestring, previous_dlogz=False, sample='auto', save_after_seconds=60, print_progress=True, parallel=False, dlogz_threshold=0.5):
     if parallel:
         with MultiPool(processes=parallel) as pool:
             print('poolsize = ',pool.size)
