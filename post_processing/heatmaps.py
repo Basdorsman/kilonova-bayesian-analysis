@@ -6,6 +6,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import math
+import dill as pickle
+import sys
+sys.path.append('../')
+from dynesty_sampler import find
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", yticklabelvisible=True, **kwargs):
@@ -147,6 +151,32 @@ def textcolor(value, norm, threshold=0.5, textcolors=("black", "white")):
            return textcolors[0]
         else:
            return textcolors[1]
+       
+def getLogZ(model,data,dist):
+    folderstring = f'../output_files/results/{model}model_{data}data_0h_delay'
+    filestring=f'{dist}Mpc_no_opticalband_NUV_Dband'
+    try: # Runs with dlogz_threshold=0.5
+        with open(folderstring+'/'+filestring+'_results_dlogz=False','rb') as resultsfile:
+            results = pickle.load(resultsfile)
+        dlogz=0.5
+        try:
+            logz=results['logz'][-1]
+        except:
+            logz=results.results['logz'][-1]
+    except FileNotFoundError: # Exception to include any newer results with custom dlogz_thresholds.
+        if isinstance(find(filestring+'_results_dlogz=*', folderstring), str):
+            intermediate_results = find(filestring+'_results_dlogz=*', folderstring)
+            #print(intermediate_results)
+            with open(intermediate_results,'rb') as file:
+                sampler = pickle.load(file)
+            dlogz=intermediate_results.split('=')[1]
+            logz=sampler.results['logz'][-1]
+        else: # No results available.
+            dlogz=np.NaN
+            logz=np.NaN
+    log10z = logz/np.log(10)
+    return log10z, dlogz, model, data
+
 
 if __name__ == '__main__':
     norm=colors.SymLogNorm(linthresh=1, linscale=1, vmin=-10, vmax=10, base=10)
