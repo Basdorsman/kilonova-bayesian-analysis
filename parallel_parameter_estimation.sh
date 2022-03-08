@@ -11,7 +11,7 @@ print_progress=0 #'0'=False
 sample='auto'
 #include_optical='r'
 #include_uv='NUV_D'
-parallel=10
+parallel=8
 resume_previous='True'
 save_after_seconds='False'
 dlogz_threshold=0.5
@@ -19,8 +19,8 @@ dist=40
 
 
 # parallel arguments
-include_optical='include_optical=r include_optical=False'
-include_uv='include_uv=NUV_D include_uv=NUV_D,D2' #"include_uv=D1 include_uv=D1,D2"
+include_optical='include_optical=r include_optical=False include_optical=r'
+include_uv='include_uv=NUV_D include_uv=NUV_D,D2 include_uv=False' #"include_uv=D1 include_uv=D1,D2"
 # read_data='read_data=shock read_data=kilonova read_data=kilonova_uvboost read_data=kilonova read_data=kilonova_uvboost' #"read_data=shock read_data=kilonova read_data=kilonova_uvboost"
 read_data='read_data=kilonova read_data=kilonova_uvboost'
 model='model=kilonova model=kilonova_uvboost'

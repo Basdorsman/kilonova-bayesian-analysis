@@ -7,7 +7,7 @@ import matplotlib.lines as mlines
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
-def cornerplot(model, samples, legend_texts, colors, smoother=2, plot_density=True, plot_datapoints=False, no_fill_contours=False, fill_contours=False ,quantiles=(0.16,0.5,0.84), levels=(1-np.exp(-0.5),1-np.exp(-2)),bins=20):
+def cornerPlot(model, samples, legend_texts, colors, smoother=2, plot_density=True, plot_datapoints=False, no_fill_contours=False, fill_contours=False ,quantiles=(0.16,0.5,0.84), medians_visible=True, quantilelines_visible=True ,levels=(1-np.exp(-0.5),1-np.exp(-2)),bins=20):
     '''
     Produces cornerplot using specified list of samples.
     
@@ -23,7 +23,7 @@ def cornerplot(model, samples, legend_texts, colors, smoother=2, plot_density=Tr
         legend_texts (list or str): texts to go in the legen.d
         colors (list or str): colors for each set of samples.
         smoother (int): variable for Corner.
-        plot_density (bool): varialbe for Corner.
+        plot_density (bool): Color density inside 2-D plots.
         plot_datapoints (bool): variable for Corner. 
         no_fill_contours (bool): variable for Corner. 
         fill_contours (bool): variable for Corner.
@@ -61,9 +61,11 @@ def cornerplot(model, samples, legend_texts, colors, smoother=2, plot_density=Tr
         fontsize=15
 
     label_kwargs = {'fontsize': fontsize}
-    title_kwargs = label_kwargs
+    title_kwargs = {'fontsize': fontsize-2}
+    labelpad = 0.04
+
     # first figure
-    figure = corner.corner(samples[0], bins=bins, labels=labels,label_kwargs=label_kwargs, smooth=smoother, color=colors[0],truths=theta_truths,truth_color='k', plot_datapoints=plot_datapoints,plot_density=plot_density,no_fill_contours=no_fill_contours,fill_contours=fill_contours,levels=levels,show_titles=True, title_kwargs=title_kwargs,quantiles=quantiles)
+    figure = corner.corner(samples[0], bins=bins, labels=labels,label_kwargs=label_kwargs, labelpad=labelpad, smooth=smoother, color=colors[0],truths=theta_truths,truth_color='k', plot_datapoints=plot_datapoints,plot_density=plot_density,no_fill_contours=no_fill_contours,fill_contours=fill_contours,levels=levels,show_titles=True, title_kwargs=title_kwargs,quantiles=quantiles)
     titledplot_indices = [i*(len(labels)+1) for i in range(samples[0].shape[1])]
     labels_strip = [labels[i] + ' = ' for i in range(samples[0].shape[1])]
     titles = []
@@ -80,10 +82,20 @@ def cornerplot(model, samples, legend_texts, colors, smoother=2, plot_density=Tr
     for i in range(len(samples[1:])):
         medians.append(3*i+5)
     for titledplot_index in titledplot_indices:
-        for median in medians:
-            figure.axes[titledplot_index].lines[median].set_linestyle('-')
         for lines in range(len(figure.axes[titledplot_index].lines)):
-            figure.axes[titledplot_index].lines[lines].set_linewidth(0.75)
+            if quantilelines_visible:
+                figure.axes[titledplot_index].lines[lines].set_visible(True)
+                figure.axes[titledplot_index].lines[lines].set_linewidth(0.75)
+            else:
+                figure.axes[titledplot_index].lines[lines].set_visible(False)
+        for median in medians:
+            if medians_visible:
+                figure.axes[titledplot_index].lines[median].set_visible(True)
+                figure.axes[titledplot_index].lines[median].set_linestyle('-')
+            else:
+                figure.axes[titledplot_index].lines[median].set_visible(False)
+        # truth line
+        figure.axes[titledplot_index].lines[truth_line].set_visible(True)
         figure.axes[titledplot_index].lines[truth_line].set_linewidth(1.5)
 
     # set ax.titles
@@ -105,55 +117,56 @@ def cornerplot(model, samples, legend_texts, colors, smoother=2, plot_density=Tr
         
     return figure
 
-def get_samples(models, datas, delays, distances, opticalbands, uvbands):
+def getSamples(models, datas, delays, distances, bands, colors, legend_texts=None):
     '''Fetches results from various samplings.
     
     This function looks up requested sampling results and fetches results. All
     parameters are strings or list of strings. But only one in total should be
-    a list of strings.
+    a list of strings. I combined the optical and uv bands into a single parameter.
     
     Parameters:
         models (str or list): analysis models.
         datas (str or list): data models.
         delays (str or list): hours of delay in dataset.
         distances (str or list): distances to event in Mpc.
-        opticalbands (str or list): choices for optical bands.
-        uvbands (str or list): choices for uv bands.
-    
+        bands (str or list): choices for optical and uv bands
+
     Returns:
         samples: (list of numpy arrays): samples.
         legend_texts (list): whichever parameter that was a list.
         colors (str): colors, same length as the parameter that was a list, up 
                       to three. 
     '''
-    variablesForString = [models, datas, delays, distances, opticalbands, uvbands]
+    variablesForString = [models, datas, delays, distances, bands]
     variableCount = 0
-    for variablesList in models, datas, delays, distances, opticalbands, uvbands:
-        if isinstance(variablesList,list):
+    for variablesList in models, datas, delays, distances, bands:
+        if isinstance(variablesList,list) and len(variablesList)>1:
             files = []
-            legend_texts = variablesList
-            colors = ['blue','gold','red'][:len(variablesList)]
+            if legend_texts==None:
+                legend_texts = variablesList
+            colors = colors[:len(variablesList)]
             for variable in variablesList:
                 variablesForString[variableCount] = variable
-                model, data, delay, distance, opticalband, uvband = variablesForString
-                files.append(f'../output_files/results/{model}model_{data}data_{delay}_delay/{distance}Mpc_{opticalband}band_{uvband}band_results_dlogz=False')
+                model, data, delay, distance, band = variablesForString
+                files.append(f'../output_files/results/{model}model_{data}data_{delay}_delay/{distance}Mpc_{band}_results_dlogz=False')
         variableCount += 1
     samples = []
     for file in files:
         with open(file,'rb') as analysis_results:
             samples.append(pickle.load(analysis_results).results.samples)
-    return(samples,legend_texts,colors)
+    return(samples,legend_texts)
 
-
-model = 'kilonova_uvboost' # kilonova, kilonova_uvboost, shock
-datas = 'kilonova_uvboost'
-delay = '0h'
-distance = ['160','100','40']
-opticalband = 'no_optical'
-uvband= 'NUV_D'
-samples,legend_texts,colors = get_samples(model,datas,delay,distance,opticalband,uvband)
-legend_texts = ['160 Mpc','100 Mpc','40 Mpc']
-figure = cornerplot(model, samples, legend_texts, colors)
-
-plt.show()
-figure.savefig(f'plots/cornerplot_{model}.png',dpi=300,pad_inches=0.3,bbox_inches='tight')
+if __name__ == '__main__':
+    model = 'kilonova' # kilonova, kilonova_uvboost, shock
+    datas = 'kilonova'
+    delay = '0h'
+    distance = ['160', '100', '40']
+    band = 'no_opticalband_NUV_Dband'
+    legend_texts= ['160 Mpc','100 Mpc','40 Mpc']
+    colors=['blue','orange','green']
+    
+    samples,legend_texts = getSamples(model, datas, delay, distance, band, colors, legend_texts=legend_texts)
+    figure = cornerPlot(model, samples, legend_texts, colors, plot_density=False, plot_datapoints=False, no_fill_contours=False, fill_contours=False, medians_visible=True, quantilelines_visible=True)
+    
+    plt.show()
+    figure.savefig(f'plots/cornerplot_{band}_{model}.png',dpi=300,pad_inches=0.3,bbox_inches='tight')
