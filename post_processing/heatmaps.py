@@ -104,11 +104,11 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
     if not isinstance(data, (list, np.ndarray)):
         data = im.get_array()
 
-    # Normalize the threshold to the images color range.
-    if threshold is not None:
-        threshold = im.norm(threshold)
-    else:
-        threshold = im.norm(data[~np.isnan(data)].max())/2.
+    # # Normalize the threshold to the images color range.
+    # if threshold is not None:
+    #     threshold = im.norm(threshold)
+    # else:
+    #     threshold = im.norm(data[~np.isnan(data)].max())/2.
 
     # Set default alignment to center, but allow it to be
     # overwritten by textkw.
@@ -132,28 +132,28 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
                 texts.append(text)
     return texts
 
-def textcolor(value, norm, threshold=0.5, textcolors=("black", "white")):
+def textcolor(value, norm, threshold=(0.75, 0.75), textcolors=("black", "white")):
     if type(norm)==colors.SymLogNorm:
         base=norm._scale.base
         if norm.vmax>0:
-            if(value < -base**(threshold*math.log(-norm.vmin, base)) or value > base**(threshold*math.log(norm.vmax, base))): 
+            if(value < -base**(threshold[0]*math.log(-norm.vmin, base)) or value > base**(threshold[0]*math.log(norm.vmax, base))): 
                 return textcolors[1]
             else:
                 return textcolors[0]
         elif norm.vmax<0:    
-            if(value < -base**(threshold*math.log(-norm.vmin, base)) or value > -base**(threshold*math.log(-norm.vmax, base))):
+            if(value < -base**(threshold[0]*math.log(-norm.vmin, base)) or value > -base**(threshold[0]*math.log(-norm.vmax, base))):
                 return textcolors[1]
             else:
                 return textcolors[0]
     elif type(norm)==colors.LogNorm:
         base=norm._scale.base
-        if(value < (norm.vmax+norm.vmin)/2):
+        if(value < base**(math.log(norm.vmax+norm.vmin, base)*threshold[1])):
            return textcolors[0]
         else:
            return textcolors[1]
        
-def getLogZ(model,data,dist):
-    folderstring = f'../output_files/results/{model}model_{data}data_0h_delay'
+def getLogZ(model,data,dist,delay=0):
+    folderstring = f'../output_files/results/{model}model_{data}data_{delay}h_delay'
     filestring=f'{dist}Mpc_no_opticalband_NUV_Dband'
     try: # Runs with dlogz_threshold=0.5
         with open(folderstring+'/'+filestring+'_results_dlogz=False','rb') as resultsfile:
@@ -171,7 +171,8 @@ def getLogZ(model,data,dist):
                 sampler = pickle.load(file)
             dlogz=intermediate_results.split('=')[1]
             logz=sampler.results['logz'][-1]
-        else: # No results available.
+        else: 
+            print(f'No results available for {model}model {data}data dist={dist} delay={delay}')
             dlogz=np.NaN
             logz=np.NaN
     log10z = logz/np.log(10)
@@ -179,6 +180,40 @@ def getLogZ(model,data,dist):
 
 
 if __name__ == '__main__':
-    norm=colors.SymLogNorm(linthresh=1, linscale=1, vmin=-10, vmax=10, base=10)
-    value = -11
-    print(textcolor(value, norm))
+    plt.rcParams["font.family"] = "serif"
+    plt.rcParams["mathtext.fontset"] = "dejavuserif"
+    cmaps= ("RdYlBu","Greens")
+    yticklabelvisibles = (True, False)
+    
+    analysisModels = ['shock','kilonova_uvboost','kilonova']
+    analysisLabels=['Shock','Kilonova Lower\nEarly Opacity','Kilonova Default']
+    
+    dataModels = ['shock','kilonova_uvboost','kilonova']
+    dataLabels=['Data: Shock','Data: Kilonova\nLower Early Opacity','Data: Kilonova']
+    
+    cbarlabels=["Evidence: Log$_{10}$($\mathcal{Z}$)","Bayes' factor: Log$_{10}$($\mathcal{B}$)"]
+    dist = 160
+    
+    logz = np.asarray([[getLogZ(model,data,dist)[0] for model in analysisModels]
+                       for data in dataModels])
+    logb = np.asarray([[np.NaN,logz[0,0]-logz[0,1],logz[0,0]-logz[0,2]],
+                       [logz[1,1]-logz[1,0],np.NaN,np.NaN],
+                       [logz[2,2]-logz[2,0],np.NaN,np.NaN]])
+    datas = (logz,logb)
+    norms = (colors.SymLogNorm(linthresh=10, linscale=1, 
+                              vmin=-10**4,
+                              vmax=10**1, base=10),
+            colors.LogNorm(vmin=1,
+                            vmax=10**4))
+    
+    fig, axes = plt.subplots(1,2,figsize=(10,5))
+    for ax, data, norm, cmap, visible, cbarlabel in zip(axes, datas, norms, cmaps, yticklabelvisibles, cbarlabels):
+        im, cbar = heatmap(data, dataLabels, analysisLabels, ax=ax, cmap=cmap,
+                           norm=norm,
+                        cbar_kw={'drawedges':False, 'pad':0.01, 'shrink':0.75},
+                        cbarlabel=cbarlabel,
+                        yticklabelvisible=visible)
+        annotate_heatmap(im, data, threshold=(0.75, 0.75), valfmt="{x:.1f}", fontsize=14)
+    
+    fig.tight_layout()
+    plt.show()
