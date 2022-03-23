@@ -152,9 +152,9 @@ def textcolor(value, norm, threshold=(0.75, 0.75), textcolors=("black", "white")
         else:
            return textcolors[1]
        
-def getLogZ(model,data,dist,delay=0):
+def getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0):
     folderstring = f'../output_files/results/{model}model_{data}data_{delay}h_delay'
-    filestring=f'{dist}Mpc_no_opticalband_NUV_Dband'
+    filestring=f'{dist}Mpc_{optical_band}band_{uv_band}band'
     try: # Runs with dlogz_threshold=0.5
         with open(folderstring+'/'+filestring+'_results_dlogz=False','rb') as resultsfile:
             results = pickle.load(resultsfile)
@@ -178,6 +178,16 @@ def getLogZ(model,data,dist,delay=0):
     log10z = logz/np.log(10)
     return log10z, dlogz, model, data
 
+def bayesPlot(fig, ax, models=['shock','kilonova_uvboost','kilonova'], datas=['shock','kilonova_uvboost','kilonova'], delay=0, dists=[40, 100, 160], optical_band='no_optical', uv_band='NUV_D', legend_labels = None, linestyles=['-',':','--','-.'], **kwargs):
+    logz = np.asarray([[[getLogZ(model,data,dist,optical_band=optical_band,uv_band=uv_band, delay=delay)[0] for dist in dists] for model in models]
+                       for data in datas])
+    logb = np.asarray([[np.NaN,logz[0,0]-logz[0,1],logz[0,0]-logz[0,2]],[logz[1,1]-logz[1,0],np.NaN,np.NaN],[logz[2,2]-logz[2,0],np.NaN,np.NaN]],dtype=object)
+    logb_fields = [(0,1),(0,2),(1,0),(2,0)]
+    
+    for field, label, linestyle in zip(logb_fields, legend_labels, linestyles):
+        ax.plot(dists,logb[field], label=label, linestyle=linestyle, **kwargs)
+    return fig, ax
+
 
 if __name__ == '__main__':
     plt.rcParams["font.family"] = "serif"
@@ -192,9 +202,10 @@ if __name__ == '__main__':
     dataLabels=['Data: Shock','Data: Kilonova\nLower Early Opacity','Data: Kilonova']
     
     cbarlabels=["Evidence: Log$_{10}$($\mathcal{Z}$)","Bayes' factor: Log$_{10}$($\mathcal{B}$)"]
-    dist = 160
-    
-    logz = np.asarray([[getLogZ(model,data,dist)[0] for model in analysisModels]
+    dist = 40
+    optical_band='r'
+    uv_band='no_uv'
+    logz = np.asarray([[getLogZ(model,data,dist,optical_band=optical_band,uv_band=uv_band)[0] for model in analysisModels]
                        for data in dataModels])
     logb = np.asarray([[np.NaN,logz[0,0]-logz[0,1],logz[0,0]-logz[0,2]],
                        [logz[1,1]-logz[1,0],np.NaN,np.NaN],

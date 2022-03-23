@@ -6,28 +6,28 @@
 
 # constant arguments
 method='sample' # test, sample
-# delay=0
+delay=0
 print_progress=0 #'0'=False
 sample='auto'
-include_optical='False' # include_optical='r'
-include_uv='NUV_D'
+include_optical='r'  # include_optical='r' 'False'
+include_uv='False'  # 'NUV_D' 'False'
 parallel=8
 resume_previous='True'
-save_after_seconds=1200
+save_after_seconds=1800
 dlogz_threshold=0.5
-#dist=40
-#read_data='shock'
+# dist=40
+# read_data='shock'
 # model='kilonova'
 
 # parallel arguments
 # include_optical='include_optical=r include_optical=False include_optical=r'
 # include_uv='include_uv=NUV_D include_uv=NUV_D,D2 include_uv=False' #"include_uv=D1 include_uv=D1,D2"
- #"read_data=shock read_data=kilonova read_data=kilonova_uvboost"
+#"read_data=shock read_data=kilonova read_data=kilonova_uvboost"
 # read_data='read_data=kilonova read_data=shock'
 # model='model=kilonova model=kilonova_uvboost'
 # dist='dist=40 dist=100 dist=160'
 # dist='dist=100 dist=160'
-delay='delay=2 delay=4 delay=8'
+# delay='delay=2 delay=4 delay=8'
 dist='dist=40 dist=100 dist=160'
 
 # for a full heatmap use matched arguments read data and model:
@@ -43,10 +43,10 @@ export read_data model method dist delay print_progress include_optical include_
 # ::: means combine all possible combinations, :::+ means matched arguments.
 
 # produce data
-parallel poetry run python ./produce-data/produce-data.py ::: $delay ::: $dist ::: $read_data :::+ $model # produce necessary data (perhaps not necessary)
+parallel poetry run python ./produce-data/produce-data.py ::: $dist ::: $read_data :::+ $model # produce necessary data (perhaps not necessary)
 
 # dry run (flag: --dry-run)
-parallel --dry-run poetry run python parameter_estimation.py ::: $delay ::: $dist ::: $read_data :::+ $model
+parallel --dry-run poetry run python parameter_estimation.py ::: $dist ::: $read_data :::+ $model
 
 # run (useful flag: --progress)
-parallel --progress poetry run python parameter_estimation.py ::: $delay ::: $dist ::: $read_data :::+ $model
+parallel --progress poetry run python parameter_estimation.py ::: $dist ::: $read_data :::+ $model
