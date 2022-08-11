@@ -96,18 +96,19 @@ if model == 'kilonova' or model == 'kilonova_uvboost':
     limits = np.ndarray((ndim,2),dtype=object)
     limits[0] = [0.01, 0.1]  # mass (solar masses)
     if model == 'kilonova_uvboost':
-        limits[1:4] = np.array(([0.05, 0.2], ['vmin', 'vmax'], [0.21, 0.8]),dtype=object)  # velocities (cm/s)
+        limits[1:4] = np.array(([0.05, 0.2], ['vmin', 'vmax'], [0.21, 0.8]), dtype=object)  # velocities (cm/s)
         limits[4:6] = np.array(([1,10],[0.01,0.1]))  # opacities (cm^2/g)
     elif model == 'kilonova':
-        limits[1:4] = np.array(([0.05, 0.2], ['vmin', 'vmax'], [0.3, 0.8]),dtype=object)  # velocities (cm/s)
+        limits[1:4] = np.array(([0.05, 0.2], ['vmin', 'vmax'], [0.3, 0.8]), dtype=object)  # velocities (cm/s)
         limits[4:6] = np.array(([1,10],[0.1,1]))  # opacities (cm^2/g)
     limits[6] = [4,5]
 elif model == 'shock':
     #limits=np.array(([0.01,10],[0.01,5],[0.01,3],[0.1,10])) #old broad
-    limits=np.array(([1,10],[0.5,5],[1,3],[1,10])) #lim[[lower,upper],..
+    #limits=np.array(([1,10],[0.5,5],[1,3],[1,10])) #lim[[lower,upper],..
+    limits=np.array(([1,10],[0.5,5],[1,3],[4.9,5.1])) #lim[[lower,upper],..
     # k in 0.1 cm^2/g, M in 0.01 solar masses, v in 0.1c, R_0 in 10^10 cm
     ndim = limits.shape[0]
-    
+
 
 ########## DEFINE MODEL ##########
 lightcurve_object = Lightcurve(distance, heating_function=heating)
@@ -117,7 +118,7 @@ def lightcurve_model(t,theta_reshaped,bandpasses):
     return abmags
 
 folderstring = f'output_files/results/{model}model_{read_data}data_{delay}h_delay'
-filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band'
+filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band_restrained_Rshock'
 
 if not (resume_previous == True and isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str)):
     if model == 'kilonova' or model == 'kilonova_uvboost':

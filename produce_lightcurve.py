@@ -20,7 +20,7 @@ class Lightcurve():
         self.heating_function = heating_function
 
     def get_blackbody(self, t_rel, theta, radiation = 'kilonova'):
-        if radiation == 'kilonova':
+        if radiation == 'kilonova' or radiation == 'kilonova_uvboost':
             L, T, r = lightcurve(t_rel, theta[0], theta[1], theta[2], theta[3], heating_function = self.heating_function)
         elif radiation == 'shock':
             k,M,V,R_0=theta
