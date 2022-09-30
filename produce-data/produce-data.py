@@ -12,6 +12,7 @@ import astropy.constants as c
 import astropy.units as u
 
 ###### .py files in parent directory
+import os
 import sys
 sys.path.insert(0, './')
 from produce_lightcurve import Lightcurve
@@ -174,6 +175,11 @@ for b_name in bs_optical_name:
 ax.legend()
 fig.show()
 print_string = f'produce-data/plots/data_{read_data}_{dist}_{delay}h_delay.png'  
+try:    
+    os.mkdir('produce-data/plots')
+    print('Created folder for plots')
+except:
+    print('Creation of folder for plots unsuccessful')
 fig.savefig(print_string)
 print(f'saved in {print_string}')
 
