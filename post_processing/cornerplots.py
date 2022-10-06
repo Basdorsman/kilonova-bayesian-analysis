@@ -7,7 +7,12 @@ import matplotlib.lines as mlines
 plt.rcParams["font.family"] = "serif"
 plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
-def cornerPlot(model, samples, legend_texts, colors, linestyles, linewidths, smoother=2, plot_density=False, plot_datapoints=False, no_fill_contours=False, fill_contours=False, quantiles=(0.16,0.5,0.84), medians_visible=False, quantilelines_visible=False, levels=(1-np.exp(-0.5),1-np.exp(-2)), bins=20):
+def cornerPlot(model, samples, legend_texts, colors, linestyles, linewidths, 
+               smoother=2, plot_density=False, plot_datapoints=False, 
+               no_fill_contours=False, fill_contours=True, 
+               quantiles=(0.16,0.5,0.84), medians_visible=False, 
+               quantilelines_visible=False, 
+               levels=(1-np.exp(-0.5),1-np.exp(-2)), bins=20):
     '''
     Produces cornerplot using specified list of samples.
     
@@ -73,6 +78,7 @@ def cornerPlot(model, samples, legend_texts, colors, linestyles, linewidths, smo
 
     # contour kwargs
     hist_kwargs_list=[{},{},{}]
+    
     contour_kwargs_list=[{},{},{}]
     for color, linestyle, linewidth, hist_kwargs, contour_kwargs in zip(colors, linestyles, linewidths, hist_kwargs_list, contour_kwargs_list):
         hist_kwargs['color']=color
@@ -83,15 +89,15 @@ def cornerPlot(model, samples, legend_texts, colors, linestyles, linewidths, smo
         contour_kwargs['linewidths']=linewidth
 
     # first figure
-    figure = corner.corner(samples[0], bins=bins, labels=labels,label_kwargs=label_kwargs, labelpad=labelpad, smooth=smoother,truths=theta_truths,truth_color='k', plot_datapoints=plot_datapoints,plot_density=plot_density,no_fill_contours=no_fill_contours,fill_contours=fill_contours,levels=levels,show_titles=True, title_kwargs=title_kwargs,quantiles=quantiles,hist_kwargs=hist_kwargs_list[0], contour_kwargs=contour_kwargs_list[0])
+    figure = corner.corner(samples[0], bins=bins, color=colors[0], labels=labels,label_kwargs=label_kwargs, labelpad=labelpad, smooth=smoother,truths=theta_truths,truth_color='k', plot_datapoints=plot_datapoints,plot_density=plot_density,no_fill_contours=no_fill_contours,fill_contours=fill_contours,levels=levels,show_titles=True, title_kwargs=title_kwargs,quantiles=quantiles,hist_kwargs=hist_kwargs_list[0], contour_kwargs=contour_kwargs_list[0])
     titledplot_indices = [i*(len(labels)+1) for i in range(samples[0].shape[1])]
     labels_strip = [labels[i] + ' = ' for i in range(samples[0].shape[1])]
     titles = []
     titles.append([figure.axes[titledplot_index].title._text.replace(label,'') for titledplot_index,label in zip(titledplot_indices, labels_strip)])
     
     # stack remaining figures
-    for sample,hist_kwargs, contour_kwargs in zip(samples[1:],hist_kwargs_list[1:], contour_kwargs_list[1:]):
-        corner.corner(sample, fig=figure, smooth=smoother, plot_datapoints=plot_datapoints,plot_density=plot_density,no_fill_contours=no_fill_contours,fill_contours=fill_contours,levels=levels,show_titles=True,title_kwargs=title_kwargs,quantiles=quantiles, hist_kwargs=hist_kwargs, contour_kwargs=contour_kwargs)
+    for sample,hist_kwargs, contour_kwargs, color in zip(samples[1:],hist_kwargs_list[1:], contour_kwargs_list[1:], colors[1:]):
+        corner.corner(sample, color=color, fig=figure, smooth=smoother, plot_datapoints=plot_datapoints,plot_density=plot_density,no_fill_contours=no_fill_contours,fill_contours=fill_contours,levels=levels,show_titles=True,title_kwargs=title_kwargs,quantiles=quantiles, hist_kwargs=hist_kwargs, contour_kwargs=contour_kwargs)
         titles.append([figure.axes[titledplot_index].title._text for titledplot_index in titledplot_indices])
 
     # color and thickness vlines
@@ -185,10 +191,15 @@ if __name__ == '__main__':
     legend_texts= ['160 Mpc','100 Mpc','40 Mpc']
     colors = ['blue','orange','green']
     linestyles = ['solid','dashdot','dashed']
-    linewidths = [3,3,3]
+    linewidths = [2,2,2]#[3,3,3]
 
     samples,legend_texts = getSamples(model, datas, delay, distance, band, legend_texts=legend_texts)
-    figure = cornerPlot(model, samples, legend_texts, colors, linestyles, linewidths)
+    figure = cornerPlot(model, samples, legend_texts, colors, linestyles,
+                        linewidths)#, smoother=2, plot_density=False, 
+                        # plot_datapoints=False, no_fill_contours=False, 
+                        # fill_contours=True, quantiles=(0.16,0.5,0.84), 
+                        # medians_visible=False, quantilelines_visible=False, 
+                        # levels=(1-np.exp(-0.5),1-np.exp(-2)), bins=20)
     
     plt.show()
     figure.savefig(f'plots/cornerplot_{band}_{model}.png',dpi=300,pad_inches=0.3,bbox_inches='tight')
