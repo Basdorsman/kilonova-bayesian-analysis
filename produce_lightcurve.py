@@ -13,6 +13,8 @@ import astropy.units as u
 from shock_model import Teff_f,R_ph_f
 from bol_to_band import get_abmag
 from ETC import ETC
+from dorado.sensitivity import _get_reddening_law
+from dorado.sensitivity import _get_dust_query
 
 class Lightcurve():
     def __init__(self,distance, heating_function = 'beta'):
@@ -125,3 +127,10 @@ class Lightcurve():
         abmags = self.calc_abmags(t_rel, theta, bandpass, bandpass_name, radiation = radiation)
         SNRs = [ETC(mag = abmag,etime=180, filter_string=bandpass_name)['S_Nt'] for abmag in abmags]
         return np.array(SNRs)
+    
+    def get_extinctioncurve(coord, time, bandpass):
+        reddening_law = _get_reddening_law()
+        dust_query = _get_dust_query()
+        ebv = dust_query(coord)
+        extinction_curve = reddening_law.extinction_curve(ebv, bandpass.waveset)
+        return extinction_curve

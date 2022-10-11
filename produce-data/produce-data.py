@@ -138,12 +138,17 @@ t_UV_data = np.asarray([element.value + delay/24 for element in t_UV_data])*u.da
 # Producing AB mags and corresponding SNRs
 lightcurve_object = Lightcurve(distance,heating_function='beta')
 
-
 # Initialize empty dictionaries
 t_data = {}
 abmags = {}
 snrs = {}  
 AB_error = {}
+
+print('tests')
+print(len(t_UV_data))
+print(len(coord_concatenated))
+#lightcurve_object.get_extinctioncurve(coord_concatenated, t_UV_data, b_NUVD)
+
 
 for b, b_name in zip(bs_uv, bs_uv_name):
     t_data[b_name] = t_UV_data
@@ -159,11 +164,12 @@ for b, b_name in zip(bs_optical, bs_optical_name):
 
 
 # SAVE DATA
-import pickle
-data = [t_data, abmags, snrs, AB_error]
-with open(f'./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay.pkl', 'wb') as tf:
-    pickle.dump(data,tf)
+# import pickle
+# data = [t_data, abmags, snrs, AB_error]
+# with open(f'./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay.pkl', 'wb') as tf:
+#     pickle.dump(data,tf)
 
+# PLOT DATA
 import matplotlib.pyplot as plt
 fig, ax = plt.subplots()
 
@@ -174,14 +180,16 @@ for b_name in bs_optical_name:
     
 ax.legend()
 fig.show()
-print_string = f'produce-data/plots/data_{read_data}_{dist}_{delay}h_delay.png'  
-try:    
-    os.mkdir('produce-data/plots')
-    print('Created folder for plots')
-except:
-    print('Creation of folder for plots unsuccessful')
-fig.savefig(print_string)
-print(f'saved in {print_string}')
+
+# SAVE PLOTS
+# print_string = f'produce-data/plots/data_{read_data}_{dist}_{delay}h_delay.png'  
+# try:    
+#     os.mkdir('produce-data/plots')
+#     print('Created folder for plots')
+# except:
+#     print('Creation of folder for plots unsuccessful')
+# fig.savefig(print_string)
+# print(f'saved in {print_string}')
 
 
 
