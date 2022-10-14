@@ -29,7 +29,7 @@ parameters = getParameters(osargs_list=['read_data','model','delay','dist','incl
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
 delay = parameters['delay'] #hours
-dist = parameters['dist'] #mpc
+dist = int(parameters['dist']) #mpc
 include_optical = parameters['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
 print_progress=parameters['print_progress']=='True'
 method = parameters['method'] #'plot', 'sample'
@@ -84,9 +84,10 @@ else:
 
 
 #### READ DATA #########
-with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_NUV_DD1D2_{delay}h_delay_redden_{redden}.pkl','rb') as tf:
+with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_NUV_D_{delay}h_delay_redden_{redden}.pkl','rb') as tf:
     data_list = pickle.load(tf)
 ts_data, abmags_data, snrs, abmags_error, extinction_curves = data_list
+
 
 
 ########## LOG PROBABILITIES ##########
@@ -104,8 +105,8 @@ if model == 'kilonova' or model == 'kilonova_uvboost':
     limits[6] = [4,5]
 elif model == 'shock':
     #limits=np.array(([0.01,10],[0.01,5],[0.01,3],[0.1,10])) #old broad
-    #limits=np.array(([1,10],[0.5,5],[1,3],[1,10])) #lim[[lower,upper],..
-    limits=np.array(([1,10],[0.5,5],[1,3],[4.9,5.1])) #lim[[lower,upper],..
+    limits=np.array(([1,10],[0.5,5],[1,3],[1,10])) #lim[[lower,upper],.. #arxiv limits
+    #limits=np.array(([1,10],[0.5,5],[1,3],[4.9,5.1])) #lim[[lower,upper],.. #restrained limits
     # k in 0.1 cm^2/g, M in 0.01 solar masses, v in 0.1c, R_0 in 10^10 cm
     ndim = limits.shape[0]
 
@@ -113,12 +114,12 @@ elif model == 'shock':
 ########## DEFINE MODEL ##########
 lightcurve_object = Lightcurve(distance, heating_function=heating)
 
-def lightcurve_model(t,theta_reshaped,bandpasses):
-    abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation)
+def lightcurve_model(t,theta_reshaped,bandpasses,extinction = False):
+    abmags = lightcurve_object.calc_abmags_combined(t,theta_reshaped,bandpasses,radiation = radiation, extinction = extinction)
     return abmags
 
 folderstring = f'output_files/results/{model}model_{read_data}data_{delay}h_delay'
-filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band_restrained_Rshock'
+filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band_redden_{redden}'
 
 if not (resume_previous == True and isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str)):
     if model == 'kilonova' or model == 'kilonova_uvboost':
@@ -138,7 +139,7 @@ if not (resume_previous == True and isinstance(find(filestring+'_sampler_dlogz=*
             theta_reshaped = np.array((theta[0] * u.Msun, np.array((theta[1], theta[2], theta[3])) * c.c, np.array((theta[4], theta[5])) * u.cm**2 / u.g, theta[6]), dtype= 'object')
             sigmas2 = {}
             loglikelihood = {}
-            abmags_model = lightcurve_model(ts_data, theta_reshaped, bs)
+            abmags_model = lightcurve_model(ts_data, theta_reshaped, bs, extinction=extinction_curves)
             for key in bs:
                 sigmas2[key] = abmags_error[key]**2
                 loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
@@ -153,7 +154,7 @@ if not (resume_previous == True and isinstance(find(filestring+'_sampler_dlogz=*
         def loglikelihood(theta):
             sigmas2 = {}
             loglikelihood = {}
-            abmags_model = lightcurve_model(ts_data, theta, bs)
+            abmags_model = lightcurve_model(ts_data, theta, bs, extinction=extinction_curves)
             for key in bs:
                 sigmas2[key] = abmags_error[key]**2
                 loglikelihood[key] = -0.5 * np.sum((abmags_data[key] - abmags_model[key]) ** 2 / sigmas2[key] + np.log(2*np.pi*sigmas2[key]))
@@ -179,7 +180,7 @@ if method == 'plot':
             globals=globals(), number=1, repeat=10))))
         print(f'One loglikelihood calculation = {timing_loglikelihood} ms')
         theta_reshaped = np.array((theta[0] * u.Msun, np.array((theta[1], theta[2], theta[3])) * c.c, np.array((theta[4], theta[5])) * u.cm**2 / u.g, theta[6]), dtype= 'object')
-        abmags_model = lightcurve_model(ts_data, theta_reshaped, bs)
+        abmags_model = lightcurve_model(ts_data, theta_reshaped, bs, extinction=extinction_curves)
     elif model == 'shock':
         k = 10 # 0.1 cm^2/g
         M = 0.5 #0.01 solar masses
@@ -195,7 +196,7 @@ if method == 'plot':
             'loglikelihood(theta)',
             globals=globals(), number=1, repeat=10))))
         print(f'One loglikelihood calculation = {timing_loglikelihood} ms')
-        abmags_model = lightcurve_model(ts_data, theta, bs)
+        abmags_model = lightcurve_model(ts_data, theta, bs, extinction=extinction_curves)
     import matplotlib.pyplot as plt
     fig,ax = plt.subplots()
     for key in bs:
@@ -206,7 +207,7 @@ if method == 'plot':
         print('created folder for plots')
     except:
         print('folder for plots exists')
-    print_string = f'./output_files/plots/test_{model}model_{read_data}data_{delay}h_delay_{dist}Mpc_{optical_string}band_{uv_string}band.png'    
+    print_string = f'./output_files/plots/test_{model}model_{read_data}data_{delay}h_delay_{dist}Mpc_{optical_string}band_{uv_string}band_redden_{redden}.png'    
     fig.savefig(print_string)
     print(f'saved in {print_string}')
 

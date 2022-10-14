@@ -1,5 +1,5 @@
-read_data=shock
-model=shock
+read_data=kilonova
+model=kilonova
 dist=40
 delay=0
 print_progress=True
@@ -10,8 +10,9 @@ resume_previous=True
 save_after_seconds=1200
 dlogz_threshold=0.5
 parallel=8
-method=plot
-export read_data model method dist delay print_progress include_optical include_uv sample resume_previous save_after_seconds parallel dlogz_threshold
+method=sample
+redden=True
+export read_data model method dist delay print_progress include_optical include_uv sample resume_previous save_after_seconds parallel dlogz_threshold redden
 
 #env=dorado-paramest-7nIrBfvE-py3.8
 #home_env=$HOME/.cache/pypoetry/virtualenvs/$env
@@ -23,6 +24,7 @@ export read_data model method dist delay print_progress include_optical include_
 
 #poetry install
 #poetry env info
-#poetry run python ./produce-data/produce-data.py 
+
+poetry run python produce-data/produce-data.py
 poetry run python parameter_estimation.py
 

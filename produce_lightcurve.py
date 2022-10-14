@@ -97,7 +97,8 @@ class Lightcurve():
         is called only a mininimum amount of times. This is efficient if t_dict
         contains duplicate time data. 
         
-        Update: I should double check if this cant be improved? isnt insort inside this function expensive?
+        Update 22-10-13: I should test how long insort takes and if it saves
+        time in some relevant example.
         
         Parameters
         ----------
@@ -115,7 +116,10 @@ class Lightcurve():
         abmags = {}
         for key in bandpasses_dict:
             flag = self.is_present(t_combined,t_dict[key].to_value('day'))
-            abmags[key] = get_abmag(T[flag], r[flag], self.distance, bandpasses_dict[key], extinction=extinction[key])
+            if extinction:
+                abmags[key] = get_abmag(T[flag], r[flag], self.distance, bandpasses_dict[key], extinction=extinction[key])
+            elif not extinction:
+                abmags[key] = get_abmag(T[flag], r[flag], self.distance, bandpasses_dict[key])
         return abmags
 
     def calc_snrs_dorado(self,t_rel,theta,ts_time_object,coord,bandpass=dorado.sensitivity.bandpasses.NUV_D,radiation = 'kilonova', extinction = False): #dorado NUV only

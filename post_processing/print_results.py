@@ -8,6 +8,7 @@ Created on Thu Aug 19 11:59:37 2021
 
 import pickle
 import numpy as np
+from heatmaps import getLogZ
 
 # uv vs no uv given r band kilonova default and shock data at 40 mpc
 # models = ['kilonova','kilonova','shock', 'shock']
@@ -32,23 +33,30 @@ import numpy as np
 # resultsstrings = [f"{model}model_{read_data}data_{dist}Mpc_{bs_string}band_{include_uv}/{timestamp} results" for model, read_data,  timestamp in zip(models, read_datas, timestamps)]
 
 # leftover kn uvboost vs kn models
-models = ['kilonova','kilonova_uvboost','kilonova','kilonova_uvboost','kilonova','kilonova_uvboost']
-read_datas = ['kilonova_uvboost_optical','kilonova_optical','kilonova_uvboost_optical','kilonova_optical','kilonova_uvboost_optical','kilonova_optical']
-include_optical = 'no_optical'
-dists = [40, 40, 100, 100, 160, 160]
-include_uv = 'uv'
-timestamps = ['21-10-07 1018','21-10-08 1002','21-10-07 1856','21-10-20 0942','21-10-07 2018','21-10-08 0915']
-bs_string = ''.join(include_optical)
-resultsstrings = [f"{model}model_{read_data}data_{dist}Mpc_{bs_string}band_{include_uv}/{timestamp} results" for model, read_data, dist, timestamp in zip(models, read_datas, dists, timestamps)]
+# models = ['kilonova','kilonova_uvboost','kilonova','kilonova_uvboost','kilonova','kilonova_uvboost']
+# read_datas = ['kilonova_uvboost_optical','kilonova_optical','kilonova_uvboost_optical','kilonova_optical','kilonova_uvboost_optical','kilonova_optical']
+# include_optical = 'no_optical'
+# dists = [40, 40, 100, 100, 160, 160]
+# include_uv = 'uv'
+# timestamps = ['21-10-07 1018','21-10-08 1002','21-10-07 1856','21-10-20 0942','21-10-07 2018','21-10-08 0915']
+# bs_string = ''.join(include_optical)
+# resultsstrings = [f"{model}model_{read_data}data_{dist}Mpc_{bs_string}band_{include_uv}/{timestamp} results" for model, read_data, dist, timestamp in zip(models, read_datas, dists, timestamps)]
 
+# for resultsstring in resultsstrings:
+#     with open(resultsstring,'rb') as analysis_results: 
+#         results = pickle.load(analysis_results)
+#     logz = results.logz[-1]
+#     log10z = logz*np.log10(np.e)
+#     print()
+#     print(resultsstring)
+#     results.summary()
+#     print('log10z',log10z)
 
+# redden vs not redden
+model = 'kilonova'
+data = 'kilonova'
+dist = 40
+reddens = [True, False]
 
-for resultsstring in resultsstrings:
-    with open(resultsstring,'rb') as analysis_results: 
-        results = pickle.load(analysis_results)
-    logz = results.logz[-1]
-    log10z = logz*np.log10(np.e)
-    print()
-    print(resultsstring)
-    results.summary()
-    print('log10z',log10z)
+evidences = [getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0, redden=redden) for redden in reddens]
+print(evidences)

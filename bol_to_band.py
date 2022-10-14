@@ -171,7 +171,7 @@ def get_abmag(T, r, distance, bandpass, extinction=False):
     
     #redshift
     z = get_redshift(distance)
-    
+
     wav = bandpass.waveset/(1+z) #redshift wavelengths
     
     # Calculate spectral radiance : np.array(len(T),len(wav))
@@ -179,7 +179,8 @@ def get_abmag(T, r, distance, bandpass, extinction=False):
     
     # Scale spectral density = flux
     f_l = B_l.T*np.pi*(r / distance)**2/(1+z) #redshift flux https://ned.ipac.caltech.edu/level5/Peacock/Peacock3_4.html
-    
+    # print('redshift: ',z)
+    # print('extinction: ',extinction)
     
     # if not isinstance(extinction, bool):
     #     f_l_transverse= f_l.T

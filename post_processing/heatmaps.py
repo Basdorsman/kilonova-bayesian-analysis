@@ -152,9 +152,12 @@ def textcolor(value, norm, threshold=(0.75, 0.75), textcolors=("black", "white")
         else:
            return textcolors[1]
        
-def getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0):
+def getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0, redden=False):
     folderstring = f'../output_files/results/{model}model_{data}data_{delay}h_delay'
-    filestring=f'{dist}Mpc_{optical_band}band_{uv_band}band'
+    if redden:
+        filestring=f'{dist}Mpc_{optical_band}band_{uv_band}band_redden_{redden}'
+    elif not redden:
+        filestring=f'{dist}Mpc_{optical_band}band_{uv_band}band'
     try: # Runs with dlogz_threshold=0.5
         with open(folderstring+'/'+filestring+'_results_dlogz=False','rb') as resultsfile:
             results = pickle.load(resultsfile)
@@ -172,7 +175,7 @@ def getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0)
             dlogz=intermediate_results.split('=')[1]
             logz=sampler.results['logz'][-1]
         else: 
-            print(f'No results available for {model}model {data}data dist={dist} delay={delay}')
+            print(f'No results available for {model}model {data}data dist={dist} delay={delay} redden={redden}')
             dlogz=np.NaN
             logz=np.NaN
     log10z = logz/np.log(10)

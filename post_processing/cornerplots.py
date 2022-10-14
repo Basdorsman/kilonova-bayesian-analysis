@@ -138,7 +138,7 @@ def cornerPlot(model, samples, legend_texts, colors, linestyles, linewidths, smo
         
     return figure
 
-def getSamples(models, datas, delays, distances, bands, legend_texts=None):
+def getSamples(models, datas, delays, distances, bands, reddens, legend_texts=None):
     '''Fetches results from various samplings.
     
     This function looks up requested sampling results and fetches results. All
@@ -158,17 +158,20 @@ def getSamples(models, datas, delays, distances, bands, legend_texts=None):
         colors (str): colors, same length as the parameter that was a list, up 
                       to three. 
     '''
-    variablesForString = [models, datas, delays, distances, bands]
+    variablesForString = [models, datas, delays, distances, bands, reddens]
     variableCount = 0
-    for variablesList in models, datas, delays, distances, bands:
+    for variablesList in models, datas, delays, distances, bands, reddens:
         if isinstance(variablesList,list) and len(variablesList)>1:
             files = []
             if legend_texts==None:
                 legend_texts = variablesList
             for variable in variablesList:
                 variablesForString[variableCount] = variable
-                model, data, delay, distance, band = variablesForString
-                files.append(f'../output_files/results/{model}model_{data}data_{delay}_delay/{distance}Mpc_{band}_results_dlogz=False')
+                model, data, delay, distance, band, redden = variablesForString
+                if redden: #account for redden and backwards compatible with old data
+                    files.append(f'../output_files/results/{model}model_{data}data_{delay}_delay/{distance}Mpc_{band}_redden_{redden}_results_dlogz=False')
+                elif not redden:
+                    files.append(f'../output_files/results/{model}model_{data}data_{delay}_delay/{distance}Mpc_{band}_results_dlogz=False')
         variableCount += 1
     samples = []
     for file in files:
@@ -177,18 +180,19 @@ def getSamples(models, datas, delays, distances, bands, legend_texts=None):
     return(samples,legend_texts)
 
 if __name__ == '__main__':
-    model = 'shock' # kilonova, kilonova_uvboost, shock
-    datas = 'shock'
+    model = 'kilonova' # kilonova, kilonova_uvboost, shock
+    datas = 'kilonova'
     delay = '0h'
-    distance = ['160', '100', '40']
+    distance = '40' #['160', '100', '40']
     band = 'no_opticalband_NUV_Dband'
-    legend_texts= ['160 Mpc','100 Mpc','40 Mpc']
-    colors = ['blue','orange','green']
-    linestyles = ['solid','dashdot','dashed']
-    linewidths = [3,3,3]
+    redden = [True, False]
+    legend_texts= ['redden', 'not redden'] # ['160 Mpc','100 Mpc','40 Mpc']
+    colors = ['blue','orange']  # ['blue','orange','green']
+    linestyles = ['solid','dashdot']  # ['solid','dashdot','dashed']
+    linewidths = [3,3]  # [3,3,3]
 
-    samples,legend_texts = getSamples(model, datas, delay, distance, band, legend_texts=legend_texts)
+    samples,legend_texts = getSamples(model, datas, delay, distance, band, redden, legend_texts=legend_texts)
     figure = cornerPlot(model, samples, legend_texts, colors, linestyles, linewidths)
     
     plt.show()
-    figure.savefig(f'plots/cornerplot_{band}_{model}.png',dpi=300,pad_inches=0.3,bbox_inches='tight')
+    #figure.savefig(f'plots/cornerplot_{band}_{model}.png',dpi=300,pad_inches=0.3,bbox_inches='tight')

@@ -56,6 +56,10 @@ b_D2 = dorado.sensitivity.bandpasses.D2
 bs_uv = [b_NUVD, b_D1, b_D2]
 bs_uv_name = ['NUV_D','D1','D2']
 
+#D1 and D2 break dust map
+bs_uv = [b_NUVD]
+bs_uv_name = ['NUV_D']
+
 
 b_u = sp.SpectralElement.from_file('./input_files/bands/SLOAN_SDSS.u.dat')
 b_g = sp.SpectralElement.from_file('./input_files/bands/SLOAN_SDSS.g.dat')
@@ -158,9 +162,6 @@ extinction_curves = {}
 # print(coord_found[0])
 # print(coord_concatenated[0])
 
-#D1 and D2 break dust map
-bs_uv = [b_NUVD]
-bs_uv_name = ['NUV_D']
 
 # generate extinction curves
 for b, b_name in zip(bs_uv+bs_optical, bs_uv_name+bs_optical_name):
