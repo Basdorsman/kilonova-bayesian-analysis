@@ -86,7 +86,7 @@ def correct_mass_redshift(mass,redshift):
     m_corrected = mass/(1+redshift)
     return(m_corrected)
 
-def get_abmag_no_redshift_no_extinction(T,r,distance,bandpass):
+def get_abmag_simplified(T,r,distance,bandpass):
     '''calculate AB magnitude faster.
     
     This code is largely copied from Synphot, using: synphot.BlackBody1D,
@@ -156,7 +156,7 @@ def get_abmag(T, r, distance, bandpass, extinction=False):
     distance : quantity length
         Luminosity distance
     bandpass : object synphot.spectrum.SpectralElement
-    z : quantity redshift
+    z : 1darray * quantity redshift
     extinction : boolean (False) or object synphot.reddening.ExtinctionCurve
     
     Returns
@@ -171,6 +171,7 @@ def get_abmag(T, r, distance, bandpass, extinction=False):
     
     #redshift
     z = get_redshift(distance)
+    
     wav = bandpass.waveset/(1+z) #redshift wavelengths
     
     # Calculate spectral radiance : np.array(len(T),len(wav))
@@ -178,6 +179,16 @@ def get_abmag(T, r, distance, bandpass, extinction=False):
     
     # Scale spectral density = flux
     f_l = B_l.T*np.pi*(r / distance)**2/(1+z) #redshift flux https://ned.ipac.caltech.edu/level5/Peacock/Peacock3_4.html
+    
+    
+    # if not isinstance(extinction, bool):
+    #     f_l_transverse= f_l.T
+    #     for i in range(f_l.shape[1]):
+    #         # print(len(f_l.T[i]))
+    #         # print(len(extinction))
+    #         # print(len(extinction[i]._model.lookup_table))
+    #         f_l_transverse[i] = f_l.T[i] * extinction[i]._model.lookup_table
+    #     f_l = f_l_transverse.T
     
     # redden
     if not isinstance(extinction, bool):

@@ -11,7 +11,7 @@ import synphot
 from kilonova_heating_rate import lightcurve
 import astropy.units as u
 from shock_model import Teff_f,R_ph_f
-from bol_to_band import get_abmag
+from bol_to_band import get_abmag#, get_abmag_simplified
 from ETC import ETC
 from dorado.sensitivity import _get_reddening_law
 from dorado.sensitivity import _get_dust_query
@@ -20,7 +20,9 @@ class Lightcurve():
     def __init__(self,distance, heating_function = 'beta'):
         self.distance = distance # u.Mpc
         self.heating_function = heating_function
+        #self.get_extinctioncurve()
 
+        
     def get_blackbody(self, t_rel, theta, radiation = 'kilonova'):
         if radiation == 'kilonova' or radiation == 'kilonova_uvboost':
             L, T, r = lightcurve(t_rel, theta[0], theta[1], theta[2], theta[3], heating_function = self.heating_function)
@@ -35,14 +37,14 @@ class Lightcurve():
         seds = [synphot.SourceSpectrum(synphot.BlackBody1D,temperature=TT).taper(bandpass.waveset) * np.pi *(rr / self.distance).to(u.dimensionless_unscaled)**2 for TT, rr in zip(T, r)]
         return seds
 
-    def calc_abmags(self,t_rel,theta, bandpasses, bandpasses_name, radiation = 'kilonova'):
+    def calc_abmags(self,t_rel,theta, bandpasses, bandpasses_name, radiation = 'kilonova', extinction = False):
         T, r = self.get_blackbody(t_rel, theta, radiation = radiation)
         if isinstance(bandpasses, dict):
             abmags = {}
             for key in zip(bandpasses):
                 abmags[key] = get_abmag(T, r, self.distance, bandpasses[key])  #list of bandpasses
         else:
-            abmags = get_abmag(T, r, self.distance, bandpasses) #single bandpass
+            abmags = get_abmag(T, r, self.distance, bandpasses, extinction=extinction) #single bandpass
         return abmags
      
     def insort(self, t_dict, kind='mergesort'):
@@ -88,12 +90,14 @@ class Lightcurve():
                 output.append(is_present)
         return output
 
-    def calc_abmags_combined(self,t_dict,theta,bandpasses_dict, radiation = 'kilonova'):
+    def calc_abmags_combined(self,t_dict,theta,bandpasses_dict, radiation = 'kilonova', extinction = False):
         '''Efficiently calculate abmags for multiple sets of time series.
         
         By leveraging the insort function, the expensive lightcurve function
         is called only a mininimum amount of times. This is efficient if t_dict
         contains duplicate time data. 
+        
+        Update: I should double check if this cant be improved? isnt insort inside this function expensive?
         
         Parameters
         ----------
@@ -111,26 +115,30 @@ class Lightcurve():
         abmags = {}
         for key in bandpasses_dict:
             flag = self.is_present(t_combined,t_dict[key].to_value('day'))
-            abmags[key] = get_abmag(T[flag], r[flag], self.distance, bandpasses_dict[key])
+            abmags[key] = get_abmag(T[flag], r[flag], self.distance, bandpasses_dict[key], extinction=extinction[key])
         return abmags
 
-    def calc_snrs_dorado(self,t_rel,theta,ts_time_object,coords,bandpass=dorado.sensitivity.bandpasses.NUV_D,radiation = 'kilonova'): #dorado only
+    def calc_snrs_dorado(self,t_rel,theta,ts_time_object,coord,bandpass=dorado.sensitivity.bandpasses.NUV_D,radiation = 'kilonova', extinction = False): #dorado NUV only
         seds = self.get_sed(t_rel,theta,bandpass,radiation = radiation)
+        if extinction:
+            redden = True
+        elif not extinction:
+            redden = False
+            
         SNRs=[dorado.sensitivity.get_snr(sed, exptime=10*u.min,
                                           coord=coord, night=True, time =
-                                          t_time_object) for sed,
-               coord, t_time_object in zip(seds,coords,
+                                          t_time_object, redden = redden) for sed, t_time_object in zip(seds,
                                            ts_time_object)]
         return np.array(SNRs)
 
-    def calc_snrs_optical(self, t_rel, theta, bandpass, bandpass_name, radiation = 'kilonova'):
-        abmags = self.calc_abmags(t_rel, theta, bandpass, bandpass_name, radiation = radiation)
+    def calc_snrs_optical(self, t_rel, theta, bandpass, bandpass_name, radiation = 'kilonova', extinction = False):
+        abmags = self.calc_abmags(t_rel, theta, bandpass, bandpass_name, radiation = radiation, extinction = extinction)
         SNRs = [ETC(mag = abmag,etime=180, filter_string=bandpass_name)['S_Nt'] for abmag in abmags]
         return np.array(SNRs)
     
-    def get_extinctioncurve(coord, time, bandpass):
+    def get_extinctioncurve(self, coord, bandpass):
         reddening_law = _get_reddening_law()
         dust_query = _get_dust_query()
         ebv = dust_query(coord)
-        extinction_curve = reddening_law.extinction_curve(ebv, bandpass.waveset)
-        return extinction_curve
+        extinction = reddening_law.extinction_curve(ebv, bandpass.waveset)
+        return extinction

@@ -61,7 +61,7 @@ ax.set_xlabel('reddened AB mag (input = 21 AB mag) ')
 #%%
 import astropy.constants as const
 
-def get_extinctioncurve(coord, time, bandpass):
+def get_extinctioncurve(coord, bandpass):
     from dorado.sensitivity import _get_reddening_law
     from dorado.sensitivity import _get_dust_query
     reddening_law = _get_reddening_law()
@@ -70,7 +70,7 @@ def get_extinctioncurve(coord, time, bandpass):
     extinction_curve = reddening_law.extinction_curve(ebv, bandpass.waveset)
     return extinction_curve
 
-extinction_curve = get_extinctioncurve(coord, time, bandpass)
+extinction_curve = get_extinctioncurve(coord, bandpass)
 
 def get_flux(T, r, distance, bandpass, z=0, extinction=False):
     h = const.h.cgs

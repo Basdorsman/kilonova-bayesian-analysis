@@ -10,7 +10,7 @@ from dynesty_sampler import getSampler, wrappedSampler, find
 from parameters import getParameters
 
 # get parameters
-parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','resume_previous','sample','save_after_seconds','parallel','dlogz_threshold'])
+parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','resume_previous','sample','save_after_seconds','parallel','dlogz_threshold','redden'])
 # parameters = {
 #     'model' : 'kilonova_uvboost',
 #     'delay' : 0,
@@ -37,6 +37,7 @@ include_uv = parameters['include_uv'].split(',')
 read_data = parameters['read_data']
 sample = parameters['sample']
 resume_previous = parameters['resume_previous']=='True'
+redden = parameters['redden']=='True'
 try:
     save_after_seconds = int(parameters['save_after_seconds'])
 except:
@@ -83,10 +84,9 @@ else:
 
 
 #### READ DATA #########
-with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_NUV_DD1D2_{delay}h_delay.pkl','rb') as tf:
+with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_NUV_DD1D2_{delay}h_delay_redden_{redden}.pkl','rb') as tf:
     data_list = pickle.load(tf)
-ts_data, abmags_data, snrs, abmags_error = data_list
-
+ts_data, abmags_data, snrs, abmags_error, extinction_curves = data_list
 
 
 ########## LOG PROBABILITIES ##########

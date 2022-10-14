@@ -10,7 +10,7 @@ resume_previous=True
 save_after_seconds=1200
 dlogz_threshold=0.5
 parallel=8
-method=sample
+method=plot
 export read_data model method dist delay print_progress include_optical include_uv sample resume_previous save_after_seconds parallel dlogz_threshold
 
 #env=dorado-paramest-7nIrBfvE-py3.8
@@ -20,8 +20,9 @@ export read_data model method dist delay print_progress include_optical include_
 #echo "cp -r $home_env $path_to_envs"
 #poetry config virtualenvs.path $path_to_envs
 #poetry env list
-poetry install
-poetry env info
+
+#poetry install
+#poetry env info
 #poetry run python ./produce-data/produce-data.py 
 poetry run python parameter_estimation.py
 
