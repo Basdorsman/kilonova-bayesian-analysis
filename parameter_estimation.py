@@ -10,7 +10,7 @@ from dynesty_sampler import getSampler, wrappedSampler, find
 from parameters import getParameters
 
 # get parameters
-parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','resume_previous','sample','save_after_seconds','parallel','dlogz_threshold','redden'])
+parameters = getParameters(osargs_list=['read_data','model','delay','dist','include_optical','include_uv','print_progress','method','resume_previous','sample','save_after_seconds','parallel','dlogz_threshold','redden','optical_delay'])
 # parameters = {
 #     'model' : 'kilonova_uvboost',
 #     'delay' : 0,
@@ -29,6 +29,7 @@ parameters = getParameters(osargs_list=['read_data','model','delay','dist','incl
 
 model = parameters['model'] #shock, kilonova, kilonova_uvboost
 delay = parameters['delay'] #hours
+optical_delay = parameters['optical_delay'] #hours
 dist = int(parameters['dist']) #mpc
 include_optical = parameters['include_optical'].split(',') # 'r', ['u', 'g','r', 'I', 'z'], ['False']
 print_progress=parameters['print_progress']=='True'
@@ -84,7 +85,7 @@ else:
 
 
 #### READ DATA #########
-with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_NUV_D_{delay}h_delay_redden_{redden}.pkl','rb') as tf:
+with open(f'input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_ugri_uvbands_NUV_D_{delay}h_delay_redden_{redden}_optical_delay_{optical_delay}.pkl','rb') as tf:
     data_list = pickle.load(tf)
 ts_data, abmags_data, snrs, abmags_error, extinction_curves = data_list
 
@@ -119,7 +120,7 @@ def lightcurve_model(t,theta_reshaped,bandpasses,extinction = False):
     return abmags
 
 folderstring = f'output_files/results/{model}model_{read_data}data_{delay}h_delay'
-filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band_redden_{redden}'
+filestring = f'{dist}Mpc_{optical_string}band_{uv_string}band_redden_{redden}_optical_delay_{optical_delay}'
 
 if not (resume_previous == True and isinstance(find(filestring+'_sampler_dlogz=*', folderstring), str)):
     if model == 'kilonova' or model == 'kilonova_uvboost':
@@ -207,7 +208,7 @@ if method == 'plot':
         print('created folder for plots')
     except:
         print('folder for plots exists')
-    print_string = f'./output_files/plots/test_{model}model_{read_data}data_{delay}h_delay_{dist}Mpc_{optical_string}band_{uv_string}band_redden_{redden}.png'    
+    print_string = f'./output_files/plots/test_{model}model_{read_data}data_{delay}h_delay_{dist}Mpc_{optical_string}band_{uv_string}band_redden_{redden}_optical_delay_{optical_delay}.png'    
     fig.savefig(print_string)
     print(f'saved in {print_string}')
 

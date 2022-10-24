@@ -20,10 +20,11 @@ from bol_to_band import mag_AB_error
 from parameters import getParameters
 
 # get parameters
-parameters = getParameters(osargs_list=['delay','dist','read_data','redden'])
+parameters = getParameters(osargs_list=['delay','dist','read_data','redden','optical_delay'])
 
 dist = int(parameters['dist'])
 read_data = parameters['read_data']
+optical_delay = int(parameters['optical_delay']) # hours
 delay = int(parameters['delay']) # hours
 redden = parameters['redden']=='True'
 # print('redden:',redden)
@@ -79,8 +80,8 @@ for band in bs_uv_name:
 
 
 # define optical observation time
-t_start = 12+delay
-t_end = int(2*24)+delay
+t_start = optical_delay
+t_end = int(36)+optical_delay
 t_optical = np.linspace(t_start,t_end,int((t_end-t_start)/12+1))*u.hour
 
 
@@ -188,10 +189,10 @@ for b, b_name in zip(bs_optical, bs_optical_name):
 # print(abmags)
 
 # SAVE DATA
-print(f"saving data to ./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}.pkl'")
+print(f"saving data to ./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}_optical_delay_{optical_delay}.pkl'")
 import pickle
 data = [t_data, abmags, snrs, AB_error, extinction_curves]
-with open(f'./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}.pkl', 'wb') as tf:
+with open(f'./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}_optical_delay_{optical_delay}.pkl', 'wb') as tf:
     pickle.dump(data,tf)
 
 # PLOT DATA
@@ -207,7 +208,7 @@ ax.legend()
 fig.show()
 
 # SAVE PLOTS
-print_string = f'produce-data/plots/data_{read_data}_{dist}_{delay}h_delay.png'  
+print_string = f'produce-data/plots/data_{read_data}_{dist}_{delay}h_delay_optical_delay_{optical_delay}.png'  
 try:    
     os.mkdir('produce-data/plots')
     print('Created folder for plots')

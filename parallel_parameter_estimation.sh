@@ -5,7 +5,7 @@
 # If an argument will remain the same throughout all jobs it is a constant argument. If it changes, it is a parallel argument. In the latter case the variable must be formatted as: variable='variable=firstvalue variable=secondvalue'.
 
 # ---- constant arguments ---- #
-method=plot # plot, sample
+method=sample # plot, sample
 print_progress=0 #'0'=False
 sample=auto
 parallel=8
@@ -14,14 +14,23 @@ save_after_seconds=1800
 dlogz_threshold=0.5
 redden=True
 
+dist=40
+read_data=kilonova_uvboost
+model=kilonova_uvboost
+include_optical=r
+include_uv=False
+delay=0
+optical_delay='optical_delay=1 optical_delay=3 optical_delay=6 optical_delay=12 optical_delay=24'
+
+
 # ---- parallel arguments ---- #
 
 # ---- distances for figure 2 and 6 ---- #
-dist='dist=40 dist=70 dist=100 dist=130 dist=160'
+# dist='dist=40 dist=70 dist=100 dist=130 dist=160'
 
 # ---- read data and model for figure 2 and 6 ---- #
-read_data='read_data=shock read_data=kilonova read_data=kilonova_uvboost read_data=shock read_data=kilonova read_data=shock read_data=kilonova_uvboost'
-model='model=shock model=shock model=shock model=kilonova model=kilonova model=kilonova_uvboost model=kilonova_uvboost' 
+# read_data='read_data=shock read_data=kilonova read_data=kilonova_uvboost read_data=shock read_data=kilonova read_data=shock read_data=kilonova_uvboost'
+# model='model=shock model=shock model=shock model=kilonova model=kilonova model=kilonova_uvboost model=kilonova_uvboost' 
 
 # ---- bands for figure 2 ---- #
 # include_optical='include_optical=r include_optical=False include_optical=r'
@@ -29,11 +38,11 @@ model='model=shock model=shock model=shock model=kilonova model=kilonova model=k
 # delay=0
 
 # ---- delays for figure 6 ---- #
-delay='delay=0 delay=2 delay=4 delay=12'
-include_optical=False  # include_optical='r' 'False'
-include_uv=NUV_D  # 'NUV_D' 'False'
+# delay='delay=0 delay=2 delay=4 delay=12'
+# include_optical=False  # include_optical='r' 'False'
+# include_uv=NUV_D  # 'NUV_D' 'False'
 
-export read_data model method dist delay print_progress include_optical include_uv sample resume_previous save_after_seconds parallel dlogz_threshold redden
+export read_data model method dist delay print_progress include_optical include_uv sample resume_previous save_after_seconds parallel dlogz_threshold redden optical_delay
 
 # ::: means combine all possible combinations, :::+ means matched arguments.
 # ---- jobs figure 2 ---- #
@@ -48,8 +57,16 @@ export read_data model method dist delay print_progress include_optical include_
 # ---- jobs figure 6 ---- #
 
 # produce data
-parallel poetry run python ./produce-data/produce-data.py ::: $dist ::: $read_data :::+ $model ::: $delay # produce necessary data (perhaps not necessary)
+# parallel poetry run python ./produce-data/produce-data.py ::: $dist ::: $read_data :::+ $model ::: $delay # produce necessary data (perhaps not necessary)
 # dry run (flag: --dry-run)
-parallel --dry-run poetry run python parameter_estimation.py ::: $dist ::: $read_data :::+ $model ::: $delay
+# parallel --dry-run poetry run python parameter_estimation.py ::: $dist ::: $read_data :::+ $model ::: $delay
 # run (useful flag: --progress)
-parallel --progress poetry run python parameter_estimation.py ::: $dist ::: $read_data :::+ $model ::: $delay
+# parallel --progress poetry run python parameter_estimation.py ::: $dist ::: $read_data :::+ $model ::: $delay
+
+# testing optical delay #
+# produce data
+parallel poetry run python ./produce-data/produce-data.py ::: $optical_delay # produce necessary data (perhaps not necessary)
+# dry run (flag: --dry-run)
+parallel --dry-run poetry run python parameter_estimation.py ::: $optical_delay
+# run (useful flag: --progress)
+parallel --progress poetry run python parameter_estimation.py ::: $optical_delay

@@ -21,12 +21,20 @@ reddening_law = _get_reddening_law()
 dust_query = _get_dust_query()
 
 
-time = Time('2020-10-31 12:33:12')
+
+# Dorado data paper:
+#156.09375, -22.02431284
+time=Time('2012-02-28 18:54:38.566')
+coord = SkyCoord(156.09375*u.deg, -22.02431284*u.deg, frame=GeocentricTrueEcliptic(equinox=time))
+
+#time = Time('2020-10-31 12:33:12')
 sun = get_sun(time).transform_to(GeocentricTrueEcliptic(equinox=time))
 
 source_spectrum = synphot.SourceSpectrum(synphot.ConstFlux1D, amplitude=21 * u.ABmag)
 bandpass = dorado.sensitivity.bandpasses.NUV_D
-coord = SkyCoord(sun.lon + 180*u.deg, 0*u.deg, frame=GeocentricTrueEcliptic(equinox=time))
+#coord = SkyCoord(sun.lon + 180*u.deg, 0*u.deg, frame=GeocentricTrueEcliptic(equinox=time))
+
+
 
 def get_reddened_mag(coord, time, source_spectrum, bandpass):    
     ebv = dust_query(coord)
@@ -52,11 +60,13 @@ for lon, lat in zip(lons, lats):
 fig, ax = plt.subplots(1,1)
 
 ax.plot(lons,magnitude)
-ax.hist(magnitude,bins=100)
+ax.hist(magnitude,bins=200)
 ax.set_xlim([21,24])
 ax.set_ylabel('frequency')
 ax.set_xlabel('reddened AB mag (input = 21 AB mag) ')
 #ax.set_xticks([i+21 for i in range(20)])
+
+print('median magnitude:', np.median(magnitude))
 
 #%%
 import astropy.constants as const

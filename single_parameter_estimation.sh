@@ -1,7 +1,7 @@
 read_data=kilonova
 model=kilonova
 dist=40
-delay=0
+delay=24
 print_progress=True
 include_optical=False
 include_uv=NUV_D
@@ -12,7 +12,8 @@ dlogz_threshold=0.5
 parallel=8
 method=sample
 redden=True
-export read_data model method dist delay print_progress include_optical include_uv sample resume_previous save_after_seconds parallel dlogz_threshold redden
+optical_delay=12
+export read_data model method dist delay print_progress include_optical include_uv sample resume_previous save_after_seconds parallel dlogz_threshold redden optical_delay
 
 #env=dorado-paramest-7nIrBfvE-py3.8
 #home_env=$HOME/.cache/pypoetry/virtualenvs/$env

@@ -181,8 +181,8 @@ def getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0,
     log10z = logz/np.log(10)
     return log10z, dlogz, model, data
 
-def bayesPlot(fig, ax, models=['shock','kilonova_uvboost','kilonova'], datas=['shock','kilonova_uvboost','kilonova'], delay=0, dists=[40, 100, 160], optical_band='no_optical', uv_band='NUV_D', legend_labels = ['kilonova L, shock data','kilonova D, shock data','shock, kilonova L data','shock, kilonova D data'], linestyles=['-',':','--','-.'], **kwargs):
-    logz = np.asarray([[[getLogZ(model,data,dist,optical_band=optical_band,uv_band=uv_band, delay=delay)[0] for dist in dists] for model in models] for data in datas])
+def bayesPlot(fig, ax, models=['shock','kilonova_uvboost','kilonova'], datas=['shock','kilonova_uvboost','kilonova'], delay=0, redden=False, dists=[40, 100, 160], optical_band='no_optical', uv_band='NUV_D', legend_labels = ['kilonova L, shock data','kilonova D, shock data','shock, kilonova L data','shock, kilonova D data'], linestyles=['-',':','--','-.'], **kwargs):
+    logz = np.asarray([[[getLogZ(model,data,dist,optical_band=optical_band,uv_band=uv_band, delay=delay, redden=redden)[0] for dist in dists] for model in models] for data in datas])
     if len(models)==3 and len(datas)==3: 
         logb = np.asarray([[np.NaN,logz[0,0]-logz[0,1],logz[0,0]-logz[0,2]],[logz[1,1]-logz[1,0],np.NaN,np.NaN],[logz[2,2]-logz[2,0],np.NaN,np.NaN]],dtype=object)
         logb_fields = [(0,1),(0,2),(1,0),(2,0)]
