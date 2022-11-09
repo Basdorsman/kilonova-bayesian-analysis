@@ -1,7 +1,7 @@
-read_data=kilonova
-model=kilonova
+read_data=shock
+model=shock
 dist=40
-delay=24
+delay=0
 print_progress=True
 include_optical=False
 include_uv=NUV_D

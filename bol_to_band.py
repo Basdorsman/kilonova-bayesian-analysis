@@ -172,13 +172,13 @@ def get_abmag(T, r, distance, bandpass, extinction=False):
     #redshift
     z = get_redshift(distance)
 
-    wav = bandpass.waveset/(1+z) #redshift wavelengths
+    wav = bandpass.waveset/(1+z) #anti-redshifted wavelengths (at emission).
     
     # Calculate spectral radiance : np.array(len(T),len(wav))
     B_l = 2*h*c**2/np.multiply(wav**5,np.exp(h*c/(k_B*np.outer(T,wav)))-1)
     
     # Scale spectral density = flux
-    f_l = B_l.T*np.pi*(r / distance)**2/(1+z) #redshift flux https://ned.ipac.caltech.edu/level5/Peacock/Peacock3_4.html
+    f_l = B_l.T*np.pi*(r / distance)**2 #redshift absorbed in luminosity distance definition https://ned.ipac.caltech.edu/level5/Peacock/Peacock3_4.html
     # print('redshift: ',z)
     # print('extinction: ',extinction)
     
@@ -191,11 +191,11 @@ def get_abmag(T, r, distance, bandpass, extinction=False):
     #         f_l_transverse[i] = f_l.T[i] * extinction[i]._model.lookup_table
     #     f_l = f_l_transverse.T
     
-    # redden
+    # redden (extinction model wavelengths are non-redshifted and match the bandpass)
     if not isinstance(extinction, bool):
         f_l = f_l.T * extinction._model.lookup_table
         f_l = f_l.T
-    
+
     # Convert flux to photlam and multiply by bandpass
     f_PHOTLAM = (f_l.T/((h*c/bandpass.waveset))).to(1/u.cm**2/u.s/u.Angstrom)*bandpass(bandpass.waveset)
     num = abs(np.trapz(f_PHOTLAM.value * bandpass.waveset.value, x=bandpass.waveset.value)) 

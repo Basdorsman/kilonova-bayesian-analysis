@@ -180,17 +180,17 @@ def getSamples(models, datas, delays, distances, bands, reddens, optical_delays,
     return(samples,legend_texts)
 
 if __name__ == '__main__':
-    model = 'shock'  # kilonova, kilonova_uvboost, shock
-    datas = 'shock'
+    model = 'kilonova_uvboost'  # kilonova, kilonova_uvboost, shock
+    datas = 'kilonova_uvboost'
     delay = '0h'
-    optical_delay=[12,6]
+    optical_delay=[12,6,3]
     distance = '40'  # ['160', '100', '40']
     band = 'rband_no_uvband'  # 'no_opticalband_NUV_Dband'
     redden = True
-    legend_texts= ['optical 12h, optical 6h'] # ['160 Mpc','100 Mpc','40 Mpc']
-    colors = ['blue','orange']  # ['blue','orange','green']
-    linestyles = ['solid','dashdot']  # ['solid','dashdot','dashed']
-    linewidths = [3,3]  # [3,3,3]
+    legend_texts= ['optical 12h', 'optical 6h', 'optical 3h'] # ['160 Mpc','100 Mpc','40 Mpc']
+    colors = ['blue','orange', 'green']  # ['blue','orange','green']
+    linestyles = ['solid','dashdot', 'dashed']  # ['solid','dashdot','dashed']
+    linewidths = [3,3,3]  # [3,3,3]
 
     samples,legend_texts = getSamples(model, datas, delay, distance, band, redden, optical_delay, legend_texts=legend_texts)
     figure = cornerPlot(model, samples, legend_texts, colors, linestyles, linewidths)

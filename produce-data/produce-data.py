@@ -203,7 +203,10 @@ for b_name in bs_uv_name:
     ax.errorbar(t_UV_data.to_value('day'), abmags[b_name],yerr=AB_error[b_name],label=b_name)
 for b_name in bs_optical_name:
     ax.errorbar(t_optical.to_value('day'), abmags[b_name],yerr=AB_error[b_name],label=b_name)
-    
+
+ax.invert_yaxis()
+ax.set_ylabel('Magnitude (AB)')
+ax.set_xlabel('t (days)')
 ax.legend()
 fig.show()
 
@@ -213,9 +216,9 @@ try:
     os.mkdir('produce-data/plots')
     print('Created folder for plots')
 except:
-    print('Creation of folder for plots unsuccessful')
+    print('No new folder')
 fig.savefig(print_string)
-print(f'saved in {print_string}')
+print(f'saved plot in {print_string}')
 
 
 
