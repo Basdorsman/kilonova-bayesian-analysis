@@ -20,11 +20,14 @@ from bol_to_band import mag_AB_error
 from parameters import getParameters
 
 # get parameters
-parameters = getParameters(osargs_list=['delay','dist','read_data'])
+parameters = getParameters(osargs_list=['delay','dist','read_data','redden','optical_delay'])
 
-dist = parameters['dist']
+dist = int(parameters['dist'])
 read_data = parameters['read_data']
+optical_delay = int(parameters['optical_delay']) # hours
 delay = int(parameters['delay']) # hours
+redden = parameters['redden']=='True'
+# print('redden:',redden)
 
 #### parameters
 if read_data == 'kilonova':
@@ -54,6 +57,10 @@ b_D2 = dorado.sensitivity.bandpasses.D2
 bs_uv = [b_NUVD, b_D1, b_D2]
 bs_uv_name = ['NUV_D','D1','D2']
 
+#D1 and D2 break dust map
+bs_uv = [b_NUVD]
+bs_uv_name = ['NUV_D']
+
 
 b_u = sp.SpectralElement.from_file('./input_files/bands/SLOAN_SDSS.u.dat')
 b_g = sp.SpectralElement.from_file('./input_files/bands/SLOAN_SDSS.g.dat')
@@ -73,8 +80,8 @@ for band in bs_uv_name:
 
 
 # define optical observation time
-t_start = 12+delay
-t_end = int(2*24)+delay
+t_start = optical_delay
+t_end = int(36)+optical_delay
 t_optical = np.linspace(t_start,t_end,int((t_end-t_start)/12+1))*u.hour
 
 
@@ -109,12 +116,14 @@ T_orbit = orbit.period
 t_half_exposure = 5*u.min
 t_schedule = schedule['time'][schedule['found']] 
 t_schedule_concatenated = t_schedule+t_half_exposure
-
 t_exposure = t_schedule-GW_detection_time+t_half_exposure
 t_exposure_concatenated = t_exposure.value
 
 coord = schedule['center']
 coord_concatenated = coord
+coord_found = schedule['center'][schedule['found']]
+coord_found = coord_found[0]
+
 
 orbits = 14
 start_time = 0.02 #days
@@ -135,35 +144,58 @@ coord_concatenated = coord_concatenated[len_to_remove:]
 # Implement delay, on t_UV_data only, not the t_UV_object because I want to keep the satellite-object relations the same.
 t_UV_data = np.asarray([element.value + delay/24 for element in t_UV_data])*u.day
 
+
 # Producing AB mags and corresponding SNRs
 lightcurve_object = Lightcurve(distance,heating_function='beta')
-
 
 # Initialize empty dictionaries
 t_data = {}
 abmags = {}
 snrs = {}  
 AB_error = {}
+extinction_curves = {}
+# print('tests')
+# print(len(t_UV_data))
+# print(len(coord_concatenated))
 
+# print("tests")
+
+# print(coord_found[0])
+# print(coord_concatenated[0])
+
+
+# generate extinction curves
+for b, b_name in zip(bs_uv+bs_optical, bs_uv_name+bs_optical_name):
+    if redden:
+        extinction_curves[b_name] = lightcurve_object.get_extinctioncurve(coord_found, b) #for a single detection per orbit
+    else:
+        extinction_curves[b_name] = False
+
+# generate data
 for b, b_name in zip(bs_uv, bs_uv_name):
+
     t_data[b_name] = t_UV_data
-    abmags[b_name] = lightcurve_object.calc_abmags(t_UV_data,theta,b,b_name,radiation=radiation)
-    snrs[b_name] = lightcurve_object.calc_snrs_dorado(t_UV_data,theta,t_UV_object,coord_concatenated,bandpass=b,radiation=radiation)
+    abmags[b_name] = lightcurve_object.calc_abmags(t_UV_data,theta,b,b_name,radiation=radiation,extinction=extinction_curves[b_name])
+    snrs[b_name] = lightcurve_object.calc_snrs_dorado(t_UV_data,theta,t_UV_object,coord_found,bandpass=b,radiation=radiation, extinction=extinction_curves[b_name]) #only one coord
     AB_error[b_name] = mag_AB_error(snrs[b_name])
+
 
 for b, b_name in zip(bs_optical, bs_optical_name):
     t_data[b_name] = t_optical
-    abmags[b_name] = lightcurve_object.calc_abmags(t_optical,theta,b, b_name,radiation=radiation)
-    snrs[b_name] = lightcurve_object.calc_snrs_optical(t_optical, theta, b, b_name, radiation=radiation)
+    abmags[b_name] = lightcurve_object.calc_abmags(t_optical,theta,b, b_name,radiation=radiation, extinction=extinction_curves[b_name])
+    snrs[b_name] = lightcurve_object.calc_snrs_optical(t_optical, theta, b, b_name, radiation=radiation, extinction=extinction_curves[b_name])
     AB_error[b_name] = mag_AB_error(snrs[b_name])
 
+# print(abmags)
 
 # SAVE DATA
+print(f"saving data to ./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}_optical_delay_{optical_delay}.pkl'")
 import pickle
-data = [t_data, abmags, snrs, AB_error]
-with open(f'./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay.pkl', 'wb') as tf:
+data = [t_data, abmags, snrs, AB_error, extinction_curve]
+with open(f'./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}_optical_delay_{optical_delay}.pkl', 'wb') as tf:
     pickle.dump(data,tf)
 
+# PLOT DATA
 import matplotlib.pyplot as plt
 fig, ax = plt.subplots()
 
@@ -171,17 +203,22 @@ for b_name in bs_uv_name:
     ax.errorbar(t_UV_data.to_value('day'), abmags[b_name],yerr=AB_error[b_name],label=b_name)
 for b_name in bs_optical_name:
     ax.errorbar(t_optical.to_value('day'), abmags[b_name],yerr=AB_error[b_name],label=b_name)
-    
+
+ax.invert_yaxis()
+ax.set_ylabel('Magnitude (AB)')
+ax.set_xlabel('t (days)')
 ax.legend()
 fig.show()
-print_string = f'produce-data/plots/data_{read_data}_{dist}_{delay}h_delay.png'  
+
+# SAVE PLOTS
+print_string = f'produce-data/plots/data_{read_data}_{dist}_{delay}h_delay_optical_delay_{optical_delay}.png'  
 try:    
     os.mkdir('produce-data/plots')
     print('Created folder for plots')
 except:
-    print('Creation of folder for plots unsuccessful')
+    print('No new folder')
 fig.savefig(print_string)
-print(f'saved in {print_string}')
+print(f'saved plot in {print_string}')
 
 
 

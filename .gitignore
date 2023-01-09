@@ -131,6 +131,7 @@ dmypy.json
 # Output files
 output_files/plots/
 output_files/results/
+output_files/
 produce-data/plots/
 input_files/data/
 post_processing/plots/

@@ -1,6 +1,8 @@
 import numpy as np
 import astropy.constants as const
+import astropy.units as u
 import synphot
+
 
 h = const.h.cgs
 c = const.c.cgs
@@ -84,7 +86,7 @@ def correct_mass_redshift(mass,redshift):
     m_corrected = mass/(1+redshift)
     return(m_corrected)
 
-def get_abmag(T,r,distance,bandpass):
+def get_abmag_simplified(T,r,distance,bandpass):
     '''calculate AB magnitude faster.
     
     This code is largely copied from Synphot, using: synphot.BlackBody1D,
@@ -137,3 +139,76 @@ def get_abmag_synphot(T, r, distance, bandpass):
     abmag_synphot = [synphot.Observation(sed, bandpass).effstim(u.ABmag).value
                      for sed in seds]
     return abmag_synphot
+
+def get_abmag(T, r, distance, bandpass, extinction=False):
+    '''calculate AB magnitude faster.
+    
+    This code is largely copied from Synphot, using: synphot.BlackBody1D,
+    synphot.SourceSpectrum and synphot.Observation. However, it's vectorized. 
+    For multiple bandpasses, I use loops.
+
+    Parameters
+    ----------
+    T : 1darray * quantity temperature
+        Blackbody Temperature
+    r : 1darray * quantity length
+        Blackbody radius
+    distance : quantity length
+        Luminosity distance
+    bandpass : object synphot.spectrum.SpectralElement
+    z : 1darray * quantity redshift
+    extinction : boolean (False) or object synphot.reddening.ExtinctionCurve
+    
+    Returns
+    -------
+    abmag : list of 1darrays 
+        list of AB magnitudes. One entry per bandpass
+    '''
+
+    h = const.h.cgs
+    c = const.c.cgs
+    k_B = const.k_B.cgs
+    
+    #redshift
+    z = get_redshift(distance)
+
+    wav = bandpass.waveset/(1+z) #anti-redshifted wavelengths (at emission).
+    
+    # Calculate spectral radiance : np.array(len(T),len(wav))
+    B_l = 2*h*c**2/np.multiply(wav**5,np.exp(h*c/(k_B*np.outer(T,wav)))-1)
+    
+    # Scale spectral density = flux
+    f_l = B_l.T*np.pi*(r / distance)**2 #redshift absorbed in luminosity distance definition https://ned.ipac.caltech.edu/level5/Peacock/Peacock3_4.html
+    # print('redshift: ',z)
+    # print('extinction: ',extinction)
+    
+    # if not isinstance(extinction, bool):
+    #     f_l_transverse= f_l.T
+    #     for i in range(f_l.shape[1]):
+    #         # print(len(f_l.T[i]))
+    #         # print(len(extinction))
+    #         # print(len(extinction[i]._model.lookup_table))
+    #         f_l_transverse[i] = f_l.T[i] * extinction[i]._model.lookup_table
+    #     f_l = f_l_transverse.T
+    
+    # redden (extinction model wavelengths are non-redshifted and match the bandpass)
+    if not isinstance(extinction, bool):
+        f_l = f_l.T * extinction._model.lookup_table
+        f_l = f_l.T
+
+    # Convert flux to photlam and multiply by bandpass
+    f_PHOTLAM = (f_l.T/((h*c/bandpass.waveset))).to(1/u.cm**2/u.s/u.Angstrom)*bandpass(bandpass.waveset)
+    num = abs(np.trapz(f_PHOTLAM.value * bandpass.waveset.value, x=bandpass.waveset.value)) 
+    den = np.ones(len(T))*abs(np.trapz(bandpass(bandpass.waveset) * bandpass.waveset.value,
+                                       x=bandpass.waveset.value))
+
+    # Convolve with bandpass for total photon flux
+    val = (num / den)*synphot.units.PHOTLAM
+
+    # Convert flux from PHOTLAM to AB magnitude.
+    abmag = synphot.units.convert_flux(bandpass.pivot(),val,u.ABmag).value
+    return abmag
+
+
+if __name__ == '__main__':
+    print(get_redshift(160*u.Mpc))

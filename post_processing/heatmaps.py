@@ -152,9 +152,13 @@ def textcolor(value, norm, threshold=(0.75, 0.75), textcolors=("black", "white")
         else:
            return textcolors[1]
        
-def getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0):
+def getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0, optical_delay=12, redden=False):
     folderstring = f'../output_files/results/{model}model_{data}data_{delay}h_delay'
     filestring=f'{dist}Mpc_{optical_band}band_{uv_band}band'
+    if redden: # Just a band-aid. There are old versions and new versions of data that may or may not include these bits of string in their names.
+        filestring+=f'_redden_{redden}'
+    if optical_delay:
+        filestring+=f'_optical_delay_{optical_delay}'
     try: # Runs with dlogz_threshold=0.5
         with open(folderstring+'/'+filestring+'_results_dlogz=False','rb') as resultsfile:
             results = pickle.load(resultsfile)
@@ -172,54 +176,165 @@ def getLogZ(model,data,dist,optical_band='no_optical', uv_band='NUV_D', delay=0)
             dlogz=intermediate_results.split('=')[1]
             logz=sampler.results['logz'][-1]
         else: 
-            print(f'No results available for {model}model {data}data dist={dist} delay={delay}')
+            print(f'No results available for {model}model {data}data dist={dist} delay={delay} redden={redden}')
             dlogz=np.NaN
             logz=np.NaN
     log10z = logz/np.log(10)
     return log10z, dlogz, model, data
 
-def bayesPlot(fig, ax, models=['shock','kilonova_uvboost','kilonova'], datas=['shock','kilonova_uvboost','kilonova'], delay=0, dists=[40, 100, 160], optical_band='no_optical', uv_band='NUV_D', legend_labels = ['kilonova L, shock data','kilonova D, shock data','shock, kilonova L data','shock, kilonova D data'], linestyles=['-',':','--','-.'], **kwargs):
-    logz = np.asarray([[[getLogZ(model,data,dist,optical_band=optical_band,uv_band=uv_band, delay=delay)[0] for dist in dists] for model in models] for data in datas])
+def bayesPlot(fig, ax, models=['shock','kilonova_uvboost','kilonova'], datas=['shock','kilonova_uvboost','kilonova'], delay=0, redden=False, dists=[40, 100, 160], optical_band='no_optical', uv_band='NUV_D', legend_labels = ['kilonova L, shock data','kilonova D, shock data','shock, kilonova L data','shock, kilonova D data'], linestyles=['-',':','--','-.'], **kwargs):
+    logz = np.asarray([[[getLogZ(model,data,dist,optical_band=optical_band,uv_band=uv_band, delay=delay, redden=redden)[0] for dist in dists] for model in models] for data in datas])
     if len(models)==3 and len(datas)==3: 
         logb = np.asarray([[np.NaN,logz[0,0]-logz[0,1],logz[0,0]-logz[0,2]],[logz[1,1]-logz[1,0],np.NaN,np.NaN],[logz[2,2]-logz[2,0],np.NaN,np.NaN]],dtype=object)
         logb_fields = [(0,1),(0,2),(1,0),(2,0)]
     elif len(models)==2 and len(datas)==2:
         logb = np.asarray([logz[0,0]-logz[0,1], logz[1,1]-logz[1,0]])
         logb_fields = [0, 1]
+    elif len(models)==2 and len(datas)==1:
+        if datas == ['shock']:
+            logb = np.asarray([logz[0,0]-logz[0,1]])
+        else:
+            logb = np.asarray([logz[0,1]-logz[0,0]])
+        logb_fields = [0]
     for field, label, linestyle in zip(logb_fields, legend_labels, linestyles):
-        ax.plot(dists,logb[field], label=label, linestyle=linestyle, **kwargs)
+        ax.plot(dists,logb[field], label=label, linestyle=linestyle, **kwargs) #this is bad, since now I can't make different types of plots using this function. instead: return datapoints for plotting and plot in a separate function.
     return fig, ax
 
+def BayesPlotRainbow(fig, ax, kilonovamodel, data, delays, redden=True, dists=[40, 100, 160], optical_band='no_optical', uv_band='NUV_D', colors=['red','orange','yellow','blue']):
+    datas=[data]
+    models=['shock', kilonovamodel]
+    logbs = []
+    for delay in delays:
+        logz = np.asarray([[[getLogZ(model,data,dist,optical_band=optical_band,uv_band=uv_band, delay=delay, redden=redden)[0] for dist in dists] for model in models] for data in datas])
+        if datas == ['shock']:
+            logb = logz[0,0]-logz[0,1]
+        else:
+            logb = logz[0,1]-logz[0,0]
+        logbs.append(logb)
+        uppers = logbs
+        lowers = logbs[1:]
+        lowers.append(-1)
+    for upper, lower, color in zip(uppers, lowers, colors):
+        ax.fill_between(dists, upper, lower, color=color)
+
+def getBayesData(models=['shock','kilonova_uvboost','kilonova'], datas=['shock','kilonova_uvboost','kilonova'], delay=0, optical_delays=[3, 6, 12], redden=False, dists=70, optical_band='no_optical', uv_band='NUV_D', legend_labels = ['kilonova L, shock data','kilonova D, shock data','shock, kilonova L data','shock, kilonova D data'], linestyles=['-',':','--','-.'], **kwargs):
+    logz = np.asarray([[[getLogZ(model,data,dist,optical_band=optical_band,uv_band=uv_band, optical_delay=optical_delay, delay=delay, redden=redden)[0] for optical_delay in optical_delays] for model in models] for data in datas])
+    if len(models)==3 and len(datas)==3:
+        logb = np.asarray([[np.NaN,logz[0,0]-logz[0,1],logz[0,0]-logz[0,2]],[logz[1,1]-logz[1,0],np.NaN,np.NaN],[logz[2,2]-logz[2,0],np.NaN,np.NaN]],dtype=object)
+        logb_fields = [(0,1),(0,2),(1,0),(2,0)]
+    elif len(models)==2 and len(datas)==2:
+        logb = np.asarray([logz[0,0]-logz[0,1], logz[1,1]-logz[1,0]])
+        logb_fields = [0, 1]
+    elif len(models)==2 and len(datas)==1:
+        if datas == ['shock']:
+            logb = np.asarray([logz[0,0]-logz[0,1]])
+        else:
+            logb = np.asarray([logz[0,1]-logz[0,0]])
+        logb_fields = [0]
+    return logb, logb_fields, legend_labels, linestyles
 
 
 if __name__ == '__main__':
     plt.rcParams["font.family"] = "serif"
     plt.rcParams["mathtext.fontset"] = "dejavuserif"
     
-    # BayesPlot
+    
+    
+    # Bayesplot optical delay
     fontsize_bayesplot=15
-    optical_band='no_optical'
-    uv_band='NUV_D'
-    delays = [0, 2, 4, 8]
-    first_datas=['1.2','3.2','5.2','9.2']
+    optical_band='r'
+    uv_band='no_uv'
+    delay=0
+    optical_delays = [3, 6, 12]
+    redden = True
+    first_datas=['3','6','12']
     markers = ['o', '*', 'P', 'D']
     bayesColors=['tab:orange','tab:blue','tab:green', 'tab:red']
-    dists=[40, 100, 160]
+    dist=70
     kilonovamodels = ['kilonova','kilonova_uvboost']
     bayesTitles = ['Default Kilonova Model', 'Lower Early Opacity Kilonova Model']
     legends = [False, True]
+    ylabels = [True, False]
 
-    fig, axes = plt.subplots(1,2, sharey=True, figsize=(10,5))
-    for ax, kilonovamodel, title, legend in zip(axes, kilonovamodels, bayesTitles, legends):
-        for delay, first_data, marker, color in zip(delays, first_datas, markers, bayesColors):
-            fig, ax = bayesPlot(fig, ax, models=['shock', kilonovamodel], datas=['shock',kilonovamodel], delay=delay, dists=dists, optical_band=optical_band, uv_band=uv_band, legend_labels=[f'Shock Data, Data @ {first_data}h',f'Kilonova Data, Data @ {first_data}h'], marker=marker, color=color)
+    fig, axes = plt.subplots(1,2, sharey=True, figsize=(11.5,3.5))
+    for ax, kilonovamodel, title, legend, ylabel in zip(axes, kilonovamodels, bayesTitles, legends, ylabels):
+        logb, logb_fields, legend_labels, linestyles = getBayesData(models=['shock', kilonovamodel], datas=['shock',kilonovamodel], delay=delay, optical_delays=optical_delays, redden=redden, dists=dist, optical_band=optical_band, uv_band=uv_band, legend_labels=['shock data, 70 Mpc','kilonova data, 70 Mpc'])
+        for field, label, linestyle in zip(logb_fields, legend_labels, linestyles):
+            ax.plot(optical_delays,logb[field], label=label, linestyle=linestyle)
         ax.set_title(f'{title}',fontsize=fontsize_bayesplot)
         ax.set_yscale('symlog', linthresh=2)
-        ax.hlines(2,40,160,color='k',label='$\log_{10}(\mathcal{B})=2$')
-        ax.set_ylabel('$\log_{10}(\mathcal{B})$',fontsize=fontsize_bayesplot)
-        ax.set_xlabel('Luminosity Distance (Mpc)',fontsize=fontsize_bayesplot)
+        ax.hlines(2,0,12,color='k',label='$\log_{10}(\mathcal{B})=2$')
+        ax.set_xlabel('optical delay',fontsize=fontsize_bayesplot)
         if legend:
-            ax.legend(loc='upper right')
+            ax.legend(bbox_to_anchor=(1,1),loc='upper left',fontsize=fontsize_bayesplot-2)
+        if ylabel:
+            ax.set_ylabel('$\log_{10}(\mathcal{B})$',fontsize=fontsize_bayesplot-1)
+            ax.tick_params(axis='y', labelsize=fontsize_bayesplot-1)
+    
+    
+    
+    # https://matplotlib.org/stable/gallery/color/colorbar_basics.html#sphx-glr-gallery-color-colorbar-basics-py
+    # Maybe even better idea: back to color maps. x-axis: distance, y-axis: delay, color: evidence.
+    
+    # BayesPlot rainbow
+    # fontsize_bayesplot=15
+    # optical_band='no_optical'
+    # uv_band='NUV_D'
+    # delays = [0, 2, 4, 12]
+    # redden = True
+    # first_datas=['1.2','3.2','5.2','13.2']
+    # markers = ['o', '*', 'P', 'D']
+    # bayesColors=['tab:orange','tab:blue','tab:green', 'tab:red']
+    # dists=[40, 70, 100, 130, 160]
+    # datass = [['shock', 'kilonova'], ['shock', 'kilonova_uvboost']] 
+    # kilonovamodels = ['kilonova','kilonova_uvboost']
+    # #bayesTitles = ['Default Kilonova Model', 'Lower Early Opacity Kilonova Model']
+    # legendss = [[False, True], [False, False]]
+    # ylabels = [True, False]
+
+    # fig, axess = plt.subplots(2,2, sharey=True, figsize=(11.5,7))
+    # for axes, kilonovamodel, datas, legends, ylabels in zip(axess, kilonovamodels, datass, legendss, ylabels):
+    #     for ax, data, legend in zip(axes, datas, legends):
+    #         # for delay, color in zip(delays, bayesColors):
+    #         #     fig, ax = bayesPlot(fig, ax, models=['shock', kilonovamodel], datas=[data], delay=delay, redden=redden, dists=dists, optical_band=optical_band, uv_band=uv_band, color=color)
+    #         #     ax.set_title(f'data={data}, kilonovamodel={kilonovamodel}',fontsize=fontsize_bayesplot)
+    #         #     ax.set_yscale('symlog', linthresh=2)
+    #         #     ax.hlines(2,40,160,color='k',label='$\log_{10}(\mathcal{B})=2$')
+    #         BayesPlotRainbow(fig, ax, kilonovamodel, data, delays, redden=redden, dists=dists, optical_band=optical_band, uv_band=uv_band)
+    #         ax.set_title(f'data={data}, kilonovamodel={kilonovamodel}',fontsize=fontsize_bayesplot)
+    #         ax.set_yscale('symlog', linthresh=2)
+    #         ax.hlines(2,40,160,color='k',label='$\log_{10}(\mathcal{B})=2$')
+    #         ax.set_ylim(bottom=0)
+            
+    
+    # BayesPlot
+    # fontsize_bayesplot=15
+    # optical_band='no_optical'
+    # uv_band='NUV_D'
+    # delays = [0, 2, 4, 12]
+    # redden = True
+    # first_datas=['1.2','3.2','5.2','9.2']
+    # markers = ['o', '*', 'P', 'D']
+    # bayesColors=['tab:orange','tab:blue','tab:green', 'tab:red']
+    # dists=[40, 70, 100, 130, 160]
+    # kilonovamodels = ['kilonova','kilonova_uvboost']
+    # bayesTitles = ['Default Kilonova Model', 'Lower Early Opacity Kilonova Model']
+    # legends = [False, True]
+    # ylabels = [True, False]
+
+    # fig, axes = plt.subplots(1,2, sharey=True, figsize=(11.5,3.5))
+    # for ax, kilonovamodel, title, legend, ylabel in zip(axes, kilonovamodels, bayesTitles, legends, ylabels):
+    #     for delay, first_data, marker, color in zip(delays, first_datas, markers, bayesColors):
+    #         fig, ax = bayesPlot(fig, ax, models=['shock', kilonovamodel], datas=['shock',kilonovamodel], delay=delay, redden=redden, dists=dists, optical_band=optical_band, uv_band=uv_band, legend_labels=[f'Shock Data, Data @ {first_data}h',f'Kilonova Data, Data @ {first_data}h'], marker=marker, color=color)
+    #     ax.set_title(f'{title}',fontsize=fontsize_bayesplot)
+    #     ax.set_yscale('symlog', linthresh=2)
+    #     ax.hlines(2,40,160,color='k',label='$\log_{10}(\mathcal{B})=2$')
+    #     ax.set_xlabel('Luminosity Distance (Mpc)',fontsize=fontsize_bayesplot)
+    #     if legend:
+    #         ax.legend(bbox_to_anchor=(1,1),loc='upper left',fontsize=fontsize_bayesplot-2)
+    #     if ylabel:
+    #         ax.set_ylabel('$\log_{10}(\mathcal{B})$',fontsize=fontsize_bayesplot-1)
+    #         ax.tick_params(axis='y', labelsize=fontsize_bayesplot-1)
     
     # Heatmaps
     # cmaps= ("RdYlBu","Greens")
@@ -254,5 +369,5 @@ if __name__ == '__main__':
     #                     yticklabelvisible=visible)
     #     annotate_heatmap(im, data, threshold=(0.75, 0.75), valfmt="{x:.1f}", fontsize=14)
     
-    # fig.tight_layout()
-    # plt.show()
+    fig.tight_layout()
+    plt.show()

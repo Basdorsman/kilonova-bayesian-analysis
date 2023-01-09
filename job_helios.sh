@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=nestedsampling
-#SBATCH --output=/home/bdorsma/my_outputs/test_lightcurve_plot_%j.out
-#SBATCH --error=/home/bdorsma/my_outputs/test_lightcurve_plot_%j.err
+#SBATCH --output=/home/bdorsma/my_outputs/dorado_%j.out
+#SBATCH --error=/home/bdorsma/my_outputs/dorado_%j.err
 #SBATCH -N 1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=126
-#SBATCH --mem=100gb
+#SBATCH --mem=250gb
 #SBATCH -t 6-0:00:00
 #SBATCH --partition=neutron-star
-#SBATCH --nodelist=helios-cn[030]
+#SBATCH --nodelist=helios-cn[039]
 
 # Create work folder
 #mkdir -p /hddstore/$USER
