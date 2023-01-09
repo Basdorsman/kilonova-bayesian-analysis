@@ -67,6 +67,8 @@ ax.set_xlabel('reddened AB mag (input = 21 AB mag) ')
 #ax.set_xticks([i+21 for i in range(20)])
 
 print('median magnitude:', np.median(magnitude))
+print('fraction of scenarios with worse dust extinction:', len(np.asarray(magnitude)[np.asarray(magnitude)>21.41])/1000)
+
 
 #%%
 import astropy.constants as const

@@ -26,21 +26,24 @@ linestyles=['none','none']
 bands=('r','NUV_D')
 dist=40
 bs_optical_string='ugri'
-bs_uv_string='NUV_DD1D2'
+bs_uv_string='NUV_D'#'NUV_DD1D2'
 delay=0
+redden='True'
+optical_delay=12
 fontsize=11
 
 ts_data = {}
 abmags_data = {}
 snrs = {}
 abmags_error = {}
+extinction_curves = {}
 
 fig, ax = plt.subplots(figsize=(4.5,3))
 
 
 for read_data in read_datas:
-    with open(f'../input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay.pkl','rb') as tf:
-        ts_data[read_data], abmags_data[read_data], snrs[read_data], abmags_error[read_data]=pickle.load(tf)
+    with open(f'../input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}_optical_delay_{optical_delay}.pkl','rb') as tf:
+        ts_data[read_data], abmags_data[read_data], snrs[read_data], abmags_error[read_data], extinction_curves[read_data]=pickle.load(tf)
     # for band,linestyle in zip(bands,linestyles):
     #     ax.errorbar(ts_data[read_data][band].to_value('hour'), abmags_data[read_data][band],yerr=abmags_error[read_data][band], color='k', linestyle=linestyle)
     ax.errorbar(ts_data[read_data]['NUV_D'].to_value('hour'), abmags_data[read_data]['NUV_D'],yerr=abmags_error[read_data]['NUV_D'], color='k', linestyle='none')
@@ -60,7 +63,7 @@ legend_names = ['Shock Interaction','Default','Lower Early Opacity']
 lightcurve_object = Lightcurve(distance,heating_function='beta')
 
 abmags={}
-for radiation, color, legend_name in zip(read_datas,colors, legend_names):
+for radiation, color, legend_name in zip(read_datas, colors, legend_names):
     abmags[radiation]={}
     
     #### parameters
@@ -83,7 +86,7 @@ for radiation, color, legend_name in zip(read_datas,colors, legend_names):
     # for b, b_name, t, line in zip(bs, b_names, ts, lines):
     #     abmags[radiation][b_name] = lightcurve_object.calc_abmags(t,theta,b,b_name,radiation=radiation)
     #     ax.plot(t.to_value('hour'),abmags[radiation][b_name], color=color,linewidth=1,zorder=1, label=f'{radiation} {b_name}', linestyle=line)
-    abmags[radiation]['NUV_D'] = lightcurve_object.calc_abmags(t_uv,theta,b_NUVD,'NUV_D',radiation=radiation)
+    abmags[radiation]['NUV_D'] = lightcurve_object.calc_abmags(t_uv,theta,b_NUVD,'NUV_D',radiation=radiation, extinction=extinction_curves[radiation]['NUV_D'])
     ax.plot(t_uv.to_value('hour'),abmags[radiation]['NUV_D'], color=color,linewidth=1,zorder=1, label=legend_name, linestyle='-')
     
 ax.vlines(15, ymin=17, ymax=23, color = 'grey', linestyle='-.', label='AT2017gfo')
