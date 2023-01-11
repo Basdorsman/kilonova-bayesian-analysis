@@ -191,7 +191,7 @@ for b, b_name in zip(bs_optical, bs_optical_name):
 # SAVE DATA
 print(f"saving data to ./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}_optical_delay_{optical_delay}.pkl'")
 import pickle
-data = [t_data, abmags, snrs, AB_error, extinction_curve]
+data = [t_data, abmags, snrs, AB_error, extinction_curves]
 with open(f'./input_files/data/SNR_fiducial_{read_data}_{dist}Mpc_opticalbands_{bs_optical_string}_uvbands_{bs_uv_string}_{delay}h_delay_redden_{redden}_optical_delay_{optical_delay}.pkl', 'wb') as tf:
     pickle.dump(data,tf)
 

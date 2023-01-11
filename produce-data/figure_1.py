@@ -95,4 +95,6 @@ ax.set_xlabel('t (hours)',fontsize=fontsize)
 ax.set_ylabel('Apparent Magnitude (AB)',fontsize=fontsize)
 ax.legend(fontsize=fontsize-2)
 fig.tight_layout()
-fig.savefig('plots/comparison_threeway.png',dpi=300)
+savestring = 'plots/comparison_threeway.png'
+fig.savefig(savestring,dpi=300)
+print(f'figure saved in {savestring}')
