@@ -4,6 +4,9 @@ Perform a bayesian analysis on kilonova light curves.
 The kilonova model is based on Hotokezaka & Nakar (2019) (https://arxiv.org/abs/1909.02581, https://github.com/hotokezaka/HeatingRate), see also: https://github.com/Basdorsman/kilonova-heating-rate.
 The shock model is based on Piro & Kollmeier (2018) (https://ui.adsabs.harvard.edu/abs/2018ApJ...855..103P/abstract).
 
+Related publication: https://iopscience.iop.org/article/10.3847/1538-4357/acaa9e
+Related zenodo repository: https://zenodo.org/record/7540160
+
 This package uses poetry (https://python-poetry.org/).
 
 .sh files are PBS job files, which could come in handy if using a cluster. 
