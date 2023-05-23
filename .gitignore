@@ -141,3 +141,8 @@ post_processing/plots/
 
 # .bak files
 **.bak
+
+
+
+# HST data
+grp/*

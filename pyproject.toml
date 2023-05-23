@@ -5,7 +5,7 @@ description = ""
 authors = ["BasDorsman"]
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<3.9"
+python = ">=3.8,<3.9"
 dynesty = "^1.1"
 six = "^1.15.0"
 scipy = "^1.6.2"
@@ -19,6 +19,7 @@ dorado-scheduling = {git = "https://github.com/nasa/dorado-scheduling.git", rev 
 dorado-sensitivity = {git = "https://github.com/nasa/dorado-sensitivity.git", rev = "add_D2"}
 corner = "^2.2.1"
 dill = "^0.3.4"
+stsynphot = "^1.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
